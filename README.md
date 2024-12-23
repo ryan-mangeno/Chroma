@@ -1,5 +1,6 @@
 # Chroma
-![chroma](https://github.com/user-attachments/assets/de4d8936-a856-442e-a823-a24b111a56d1)
+
+![chroma](https://github.com/user-attachments/assets/d492cb89-ccae-4070-a6e2-ce44c4a961dd)
 
 (Inspired by Chromatic Number)
 
