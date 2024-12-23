@@ -2,7 +2,6 @@
 #include <cmath>
 
 
-
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
 
@@ -486,7 +485,7 @@ quat MakeRotationFromVec2Vec(vec3 a, vec3 b) {
 		if (fabsf(a.data[1]) < fabs(a.data[0])) {
 			ortho = MakeVec3(0, 1, 0);
 		}
-		if (fabsf(a.data[2]) < min(fabs(a.data[0]), fabs(a.data[1]))) {
+		if (fabsf(a.data[2]) < std::fmin(fabs(a.data[0]), fabs(a.data[1]))) {
 			ortho = MakeVec3(0, 0, 1);
 		}
 		vec3 axis = Normalize(Cross(a, ortho));
