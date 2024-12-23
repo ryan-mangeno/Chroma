@@ -18,9 +18,15 @@ project "Chroma"
         buildoptions { "/arch:SSE", "/arch:AVX" }
 
     
-    filter "system:windows"
+        filter "system:windows"
         systemversion "latest"
-        staticruntime "On"
 
-    filter { "system:windows", "configurations:Release" }
-        buildoptions "/MT"
+
+        filter "configurations:Debug"
+            runtime "Debug"    
+            staticruntime "Off"  
+
+        filter "configurations:Release"
+            runtime "Release" 
+            staticruntime "Off"  
+
