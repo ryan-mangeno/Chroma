@@ -1,8 +1,8 @@
 #include <immintrin.h>
 #include <intrin.h>
 
-#ifndef CHROME_MATH_H
-#define CHROME_MATH_H
+#ifndef CHROMA_MATH_H
+#define CHROMA_MATH_H
 
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
