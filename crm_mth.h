@@ -1,8 +1,11 @@
+#ifndef CHROMA_MATH_H
+#define CHROMA_MATH_H
+
 #include <immintrin.h>
 #include <intrin.h>
 
-#ifndef CHROMA_MATH_H
-#define CHROMA_MATH_H
+#define pi 3.14159265359f
+#define eps 1e-10f
 
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
@@ -70,12 +73,35 @@ struct quat {
 
 
 
+// some util functions
+// might add an ifdef for "fast functions" if user doesnt care about slight innacuracies
 
+/** 
+	calculates fast inv sqrt ... refrenced stack over flow, uses a magical number and newtons method, check it out in .cpp file!
 
-/*-------- Conversions        ----------*/
+	\param x in float
+	\returns inverse square of said float
+*/
+float fast_inv_sqrt(float x);
 
-#define pi 3.14159265359f
-#define eps 1e-10f
+/** 
+	calculates sqrt ...
+	based on fast inv square
+
+	\param x in float
+	\returns returns 1/fast_inv_sqrt(x)
+*/
+float fast_sqrt(float x);
+
+/** 
+	truncates float to int ...
+
+	\param f in float
+	\returns returns int trunc of float
+*/
+
+int fast_ftoi(float f);
+
 
 /**
 	Convert from degrees to radians.
@@ -83,7 +109,7 @@ struct quat {
 	\param angle the angle to convert (in degrees)
 	\returns the angle converted to radians
 */
-float Deg2Rad(float angle);
+float radians(float angle);
 
 /**
 	Convert from radians to degrees.
@@ -91,7 +117,7 @@ float Deg2Rad(float angle);
 	\param angle the angle to convert (in radians)
 	\returns the angle converted to degrees
 */
-float Rad2Deg(float angle);
+float degrees(float angle);
 
 /*-------- Vec3 Operations    ----------*/
 
@@ -228,6 +254,20 @@ vec3 Slerp(vec3 a, vec3 b, float t);
 	\returns a new vector, being a linear interpolation between a and b.
 */
 vec3 Nlerp(vec3 a, vec3 b, float t);
+
+/**
+	ease in takes t and makes it increase slowly with then speeds up
+	\param t the "time" value to interpolate with
+	\returns adjusted "time" value
+*/
+float ease_in(float t);
+
+/**
+	ease out takes t and makes it increased fast then slows down
+	\param t the "time" value to interpolate with
+	\returns adjusted "time" value
+*/
+float ease_out(t);
 
 /**
 	Indicates whether two vectors are within epsilon of one another.
@@ -461,14 +501,6 @@ quat GetConjQuat(quat q);
 */
 quat InvQuat(quat q);
 
-
-
-// some util functions
-// might add an ifdef for "fast functions" if user doesnt care about slight innacuracies
-
-float fast_inv_sqrt(float x);
-
-float fast_sqrt(float x);
 
 }
 

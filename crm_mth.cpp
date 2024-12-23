@@ -5,20 +5,70 @@
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
 
+// might end up splitting up into different src files based on functionality
+// vector ops, transformations, mat stuff, etc
 
 
 namespace crm {
-/*-------- Conversions        ----------*/
 
-float Deg2Rad(float angle) {
+/*--------Utility Operations---------*/
+
+
+/*
+	The fast inv sqrt by Terje Mathisen and Gary Tarolli ...
+	"Use (almost) the same algorithm as CPU/FPU, 
+	exploit the improvement of initial conditions for the special case of 1/sqrt(x) 
+	and don't calculate all the way to precision CPU/FPU will go to but stop earlier, 
+	thus gaining in calculation speed." - BJovke (stack overflow)
+
+	https://stackoverflow.com/questions/1349542/john-carmacks-unusual-fast-inverse-square-root-quake-iii
+*/
+float fast_inv_sqrt(float x) {
+    float half = 0.5f * x;
+
+    int i = *(int*)&x; // Treat float as integer to use bit-level manipulation
+    
+	i = 0x5f3759df - (i >> 1); // Magic number: 0x5f3759df is a constant for the approximation
+    
+	x = *(float*)&i; // Convert back to float
+    
+	x = x * (1.5f - half * x * x); // One iteration of Newton’s method for refinement
+    
+	return x;
+}
+
+float fast_sqrt(float x) {
+    return 1.0f / fast_inv_sqrt(x);
+}
+
+/*
+	info on why to avoid calling floor()
+	https://stackoverflow.com/questions/2352303/avoiding-calls-to-floor
+
+
+	_mm_load_ss(&f) takes the input float f and places it in an SSE register.
+	_mm_cvtt_ss2si converts the value in the SSE register to an integer using truncation.
+	The resulting integer is returned.
+*/
+int fast_ftoi(float f)
+{
+    return _mm_cvtt_ss2si(_mm_load_ss(&f));     
+}
+
+
+
+/*-------- Conversions----------*/
+
+float radians(float angle) {
 	return angle * pi / 180.0f;
 }
 
-float Rad2Deg(float angle) {
+float degrees(float angle) {
 	return angle * 180.0f / pi;
 }
 
-/*-------- Vec3 Operations    ----------*/
+/*-------- Vec3 Operations----------*/
+
 
 vec3 MakeVec3(float x, float y, float z) {
 
@@ -34,12 +84,35 @@ vec3 MakeVec3(float x, float y, float z) {
 	return result;
 }
 
+float AngleBetweenVectors3(vec3 a, vec3 b) {
+
+	/*
+	consider two vectors a and b
+	
+	the |projection| of a onto b is, cos(theta)|a| 
+	scaling the projection by |b| gives us the dot product being
+	dot(a,b) = |a||b|cos(theta)
+	solving for theta, we get dot(a,b)/(|a||b|)
+
+	
+	*/
+
+	float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+	float dot = Dot(a, b);
+
+	return degrees(acosf(dot / denominator));
+}
+
+
 float Dot(vec3 a, vec3 b) {
 	return a.data[0] * b.data[0] + a.data[1] * b.data[1] + a.data[2] * b.data[2];
 }
 
 vec3 Cross(vec3 a, vec3 b) {
 	vec3 result;
+
+	// cross product gives the perpendicular vector to two vectors 
 
 	result.data[0] = a.data[1] * b.data[2] - a.data[2] * b.data[1];
 	result.data[1] = a.data[2] * b.data[0] - a.data[0] * b.data[2];
@@ -50,6 +123,8 @@ vec3 Cross(vec3 a, vec3 b) {
 }
 
 vec3 Normalize(vec3 a) {
+
+	// get inv magnitude, we will take this scalar and mult to vector, mag will be 1
 
 	float invMagnitude = 1.0f / sqrtf(a.data[0] * a.data[0] + a.data[1] * a.data[1] + a.data[2] * a.data[2]);
 
@@ -90,39 +165,20 @@ vec3 Mul(vec3 a, float scalar) {
 
 }
 
-float fast_inv_sqrt(float x) {
-    float half = 0.5f * x;
-
-    int i = *(int*)&x; // Treat float as integer to use bit-level manipulation
-    
-	i = 0x5f3759df - (i >> 1); // Magic number: 0x5f3759df is a constant for the approximation
-    
-	x = *(float*)&i; // Convert back to float
-    
-	x = x * (1.5f - half * x * x); // One iteration of Newton’s method for refinement
-    
-	return x;
-}
-
-float fast_sqrt(float x) {
-    return 1.0f / fast_inv_sqrt(x);
-}
-
-float AngleBetweenVectors3(vec3 a, vec3 b) {
-	float denominator = sqrtf(Dot(a, a) * Dot(b, b));
-
-	float dot = Dot(a, b);
-
-	return Rad2Deg(acosf(dot / denominator));
-}
 
 vec3 Project(vec3 incoming, vec3 basis) {
-
+	/*
+	 take dot of incoming and basis, giving us |a||b|cos(theta)
+	 divide by |b| to get unscaled magnitude of the projection
+	 |projection| = |a|cos(theta)
+	 projection = |a|cos(theta) * b/|b| to get projection in direction of b
+	 we can simply take dot(b,b) to get |b|^2, we will divide |a||b|cos(theta) by |b|^2 then mul by b
+	 this gets our projection
+	*/
 	return Mul(basis, Dot(incoming, basis) / Dot(basis, basis));
 }
 
 vec3 Reject(vec3 incoming, vec3 basis) {
-	
 	return Sub(incoming, Project(incoming, basis));
 }
 
@@ -130,6 +186,32 @@ vec3 Reflect(vec3 incident, vec3 normal) {
 
 	vec3 result;
 	// reflected = incident − 2(incident.normal)normal
+
+	//_mm_fmadd_ps takes 3 parameters and performs a fused multiply-add operation on packed floats
+	// multiplies src1 and src2 , adds src3
+
+	/*
+
+
+	we get projection of inci and norm with dot(inci, norm)/|norm|^2 * norm
+	we have some vec c, that is perpendicular to the projection vec ( rejection vec )
+	we know -c too, which will be useful for the reflection vec
+	proj + (-c) gives the reflection vec
+
+	for the full formula, we have 
+
+	dot(inci, norm)/|norm|^2 * norm + dot(inci, norm)/|norm|^2 * norm - inci
+	or
+	2(dot(inci, norm)/|norm|^2 * norm) - a
+	
+
+	however, since we are dealing with physics, with rays, we  replace inci with -inci, simply flipping the sign
+	since the ray is not going out of a wall for example but into it
+	flipping the signs
+
+	-2(dot(inci, norm)/|norm|^2 * norm) + a
+
+	*/
 	result.vector = _mm_fmadd_ps(
 		normal.vector, 
 		_mm_set1_ps(-2.0f * Dot(incident, normal)),
@@ -143,6 +225,23 @@ vec3 Lerp(vec3 a, vec3 b, float t) {
 
 	vec3 result;
 
+	// linear interpolation between two vecs
+	/*
+	
+		when t = 0, its a
+		t = 0, its b
+
+		lerp(a,b,t) = (1-t)(a) + (t)(b)
+		expanding
+		a - at + bt
+
+		a + t(b-a)
+		t(b-a) + a
+
+		so we subtract b-a and multiply by t, then add a
+		allowed to us by _mm_fmadd_ps to multiply to things then add the third
+	*/
+
 	result.vector = _mm_fmadd_ps(
 		_mm_sub_ps(b.vector, a.vector),
 		_mm_set1_ps(t),
@@ -154,13 +253,17 @@ vec3 Lerp(vec3 a, vec3 b, float t) {
 
 vec3 Slerp(vec3 a, vec3 b, float t) {
 
+	// spherical linear interp
+	// special case when t<.1, just use linear interp
+	// SLERP(a, b, t) = (sin((1-t) * theta) / sin(theta)) * a + (sin(t * theta) / sin(theta)) * b
+
 	if (t < 0.1f) {
 		return Lerp(a, b, t);
 	}
 
 	float angle = AngleBetweenVectors3(a, b);
 
-	float denominator = sinf(Deg2Rad(angle));
+	float denominator = sinf(radians(angle));
 
 	vec3 result;
 
@@ -173,13 +276,28 @@ vec3 Slerp(vec3 a, vec3 b, float t) {
 	return result;
 }
 
+// normalizing lerp vec
 vec3 Nlerp(vec3 a, vec3 b, float t) {
-
 	return Normalize(Lerp(a, b, t));
 }
 
+// ease in for lerp animation
+// slow then fast
+float ease_in(float t){
+	return t * t;
+}
+
+// ease out for lerp animation
+// fast then slow
+float ease_out(t){
+	return t * (2-t)
+}
+
+
 bool Close(vec3 a, vec3 b) {
 	
+	// get the displacement vec to see how far the terminal
+	// points vary from the other, dot product with itself to get the mag
 	vec3 displacement = Sub(a, b);
 
 	return Dot(displacement, displacement) < eps;
@@ -220,7 +338,7 @@ mat4 MakeIdentity4() {
 mat4 MakePerspectiveProjection(
 	float fovy, float aspect, float near, float far) {
 
-	float yMax = near * tanf(Deg2Rad(fovy / 2));
+	float yMax = near * tanf(radians(fovy / 2));
 	float xMax = yMax * aspect;
 
 	/*
@@ -295,7 +413,7 @@ mat4 Translation(vec3 translation) {
 
 mat4 XRotation(float angle) {
 
-	angle = Deg2Rad(angle);
+	angle = radians(angle);
 	float cT = cosf(angle);
 	float sT = sinf(angle);
 
@@ -311,7 +429,7 @@ mat4 XRotation(float angle) {
 
 mat4 YRotation(float angle) {
 
-	angle = Deg2Rad(angle);
+	angle = radians(angle);
 	float cT = cosf(angle);
 	float sT = sinf(angle);
 
@@ -327,7 +445,7 @@ mat4 YRotation(float angle) {
 
 mat4 ZRotation(float angle) {
 
-	angle = Deg2Rad(angle);
+	angle = radians(angle);
 	float cT = cosf(angle);
 	float sT = sinf(angle);
 
@@ -462,8 +580,8 @@ quat MakeQuaternionFromRotation(float angle, vec3 axis) {
 	quat q;
 
 	axis = Normalize(axis);
-	float s = sinf(Deg2Rad(angle / 2));
-	float c = cosf(Deg2Rad(angle / 2));
+	float s = sinf(radians(angle / 2));
+	float c = cosf(radians(angle / 2));
 
 	q.vector = _mm_mul_ps(axis.vector, _mm_set1_ps(s));
 	q.data[3] = c;
@@ -513,7 +631,7 @@ vec3 GetAxisFromQuaternion(quat q) {
 }
 
 float GetAngleFromQuaternion(quat q) {
-	return Rad2Deg(2.0f * acosf(q.data[3]));
+	return degrees(2.0f * acosf(q.data[3]));
 }
 
 quat Add(quat q1, quat q2) {
