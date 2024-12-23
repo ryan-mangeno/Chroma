@@ -1,4 +1,6 @@
 # Chroma
+![chroma](https://github.com/user-attachments/assets/de4d8936-a856-442e-a823-a24b111a56d1)
+
 (Inspired by Chromatic Number)
 
 Math Library in C++ 
