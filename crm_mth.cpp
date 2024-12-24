@@ -289,8 +289,8 @@ float ease_in(float t){
 
 // ease out for lerp animation
 // fast then slow
-float ease_out(t){
-	return t * (2-t)
+float ease_out(float t){
+	return t * (2 - t);
 }
 
 
@@ -403,6 +403,8 @@ mat4 Translation(vec3 translation) {
 
 	mat4 result;
 
+	// w = 1 for coordinates, w = 0 for directions
+
 	result.column[0] = _mm_setr_ps(1, 0, 0, 0);
 	result.column[1] = _mm_setr_ps(0, 1, 0, 0);
 	result.column[2] = _mm_setr_ps(0, 0, 1, 0);
@@ -436,9 +438,10 @@ mat4 YRotation(float angle) {
 	mat4 result;
 
 	result.column[0] = _mm_setr_ps( cT, 0, sT, 0);
-	result.column[1] = _mm_setr_ps(  0, 1,  0, 0);
+	result.column[1] = _mm_setr_ps( 0,  1, 0, 0);
 	result.column[2] = _mm_setr_ps(-sT, 0, cT, 0);
-	result.column[3] = _mm_setr_ps(  0, 0,  0, 1);
+	result.column[3] = _mm_setr_ps( 0,  0, 0, 1);
+
 
 	return result;
 }
@@ -462,22 +465,35 @@ mat4 ZRotation(float angle) {
 vec4 Mul(mat4 m, vec4 v) {
 
 	vec4 result;
+	
+	/*
+	v.data[0] is multiplied by each element in m.column[0]
+	v.data[1] is multiplied by each element in m.column[1]
+	v.data[2] is multiplied by each element in m.column[2]
+	v.data[3] is multiplied by each element in m.column[3]
+
+	add all vectors resulting vectors from simd ...
+	*/
 
 	result.vector = _mm_fmadd_ps(_mm_set1_ps(v.data[0]), m.column[0],
 					_mm_fmadd_ps(_mm_set1_ps(v.data[1]), m.column[1],
 					_mm_fmadd_ps(_mm_set1_ps(v.data[2]), m.column[2],
-					_mm_mul_ps(_mm_set1_ps(v.data[3]), m.column[3])
+					_mm_mul_ps(_mm_set1_ps(  v.data[3]), m.column[3])
+						)
 					)
-				)
-	);
+				);
 
 	return result;
 }
 
-mat4 Mul(mat4 m1, mat4 m2) {
+
+mat4 Mul(mat4 m2, mat4 m1) {
 
 	mat4 result;
 
+	// this is not a recursive call ...
+	// we call it on the mat column vector, so we multiply the column vector by
+	// all 4 column vectors in m2
 	result.column_vector[0] = Mul(m2, m1.column_vector[0]);
 	result.column_vector[1] = Mul(m2, m1.column_vector[1]);
 	result.column_vector[2] = Mul(m2, m1.column_vector[2]);

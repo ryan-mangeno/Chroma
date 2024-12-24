@@ -368,7 +368,7 @@ vec4 Mul(mat4 m, vec4 v);
 	\param m2 the new matrix to multiply onto m1
 	\returns a new mat4 representing the matrix multiplication: m3 = m2*m1
 */
-mat4 Mul(mat4 m1, mat4 m2);
+mat4 Mul(mat4 m2, mat4 m1);
 
 /**
 	\returns the matrix sum m3 = m1 + m2
