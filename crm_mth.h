@@ -267,7 +267,7 @@ float ease_in(float t);
 	\param t the "time" value to interpolate with
 	\returns adjusted "time" value
 */
-float ease_out(t);
+float ease_out(float t);
 
 /**
 	Indicates whether two vectors are within epsilon of one another.
