@@ -4,8 +4,8 @@
 #include <immintrin.h>
 #include <intrin.h>
 
-#define pi 3.14159265359f
-#define eps 1e-10f
+constexpr float pi = 3.14159265359f;
+constexpr float eps = 1e-10f;
 
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
@@ -41,18 +41,30 @@
 
 namespace crm {
 
+
 struct vec3 {
     union {
         __m128 vector;      // 128-bit SIMD register representing the 3D vector
         float data[4];      // Array of 4 floats, includes 3 for the vector and 1 for padding (since SIMD registers are typically 128-bit)
+
+		// anonymous struct to access x y and z members
+		struct {
+			float x, y, z, __PAD__;
+		};
     };
+	vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
 };
 
 struct vec4 {
     union {
         __m128 vector;      // 128-bit SIMD register representing the 4D vector
         float data[4];      // Array of 4 floats, representing the vector in standard format
+
+		struct {
+			float x, y, z, w;
+		};
     };
+	vec4(float x = 0.0f, float y = 0.0f, float z = 0.0f, float w = 0.0f);
 };
 
 struct mat4 {
@@ -60,15 +72,28 @@ struct mat4 {
         __m256 chunk[2];          // Array of two 256-bit SIMD registers (used for AVX operations)
         __m128 column[4];         // Array of four 128-bit SIMD registers (used for SSE operations)
         vec4 column_vector[4];    // Array of 4 vec4, where each element is a column vector of the matrix
-        float data[16];           // Array of 16 floats, representing the matrix elements in row-major or column-major format
+        float data[16];           // Array of 16 floats, representing the matrix elements in column-major format
     };
+	mat4(float x = 1.0f, float y = 1.0f, float z = 1.0f, float w = 1.0f);
 };
 
 struct quat {
     union {
         __m128 vector;      // 128-bit SIMD register representing the quaternion
-        float data[4];      // Array of 4 floats, representing the quaternion's components
+        float data[4];      // Array of 4 floats for x,y,z,w components -> not scalar first
+
+		struct {
+			float x, y, z, w;
+		};
     };
+	quat(float x, float y, float z, float w);
+	quat();
+
+	// replaced from MakeQuaternionFromRotation
+	quat(float angle, vec3 axis);
+
+	// replaced from MakeRotationFromVec2Vec
+	quat(vec3 a, vec3 b);
 };
 
 
@@ -123,8 +148,9 @@ float degrees(float angle);
 
 /**
 	Construct a vec3 from individual floating point components.
+	old, now there is a constructor for vec3
 */
-vec3 MakeVec3(float x, float y, float z);
+//vec3 MakeVec3(float x, float y, float z);
 
 /**
 	Compute the dot product between two vec3s,
@@ -294,9 +320,9 @@ float Dot(vec4 a, vec4 b);
 /*-------- Matrix4 Operations ----------*/
 
 /**
-	\returns a new 4x4 matrix storing the identity transform.
+	\ old, now there is constructor for mat4
 */
-mat4 MakeIdentity4();
+//mat4 MakeIdentity4();
 
 /**
 	Make a perspective projection matrix.
@@ -426,8 +452,9 @@ mat4 TransformInverse(mat4 matrix);
 
 /**
 	\returns a quaternion made from individual components.
+	// old, constructor for quaternion exists 
 */
-quat MakeQuaternionFromComponents(float x, float y, float z, float w);
+//quat MakeQuaternionFromComponents(float x, float y, float z, float w);
 
 /**
 	Make a quaternion from a rotation operation.
@@ -435,13 +462,18 @@ quat MakeQuaternionFromComponents(float x, float y, float z, float w);
 	\param angle the rotation angle (in degrees)
 	\param axis the axis of rotation
 	\returns the corresponding quaternion
-*/
-quat MakeQuaternionFromRotation(float angle, vec3 axis);
 
-/**
-	Make a quaternion tracking a rotation from vector a to vector b.
+	old : constructor for this
 */
-quat MakeRotationFromVec2Vec(vec3 a, vec3 b);
+// quat MakeQuaternionFromRotation(float angle, vec3 axis);
+
+
+ /**
+ 	Make a quaternion tracking a rotation from vector a to vector b.
+
+	old : constructor for this
+ */
+// quat MakeRotationFromVec2Vec(vec3 a, vec3 b);
 
 /**
 	\returns the quaternion's axis of rotation
