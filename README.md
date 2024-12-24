@@ -5,7 +5,13 @@
 
 (Inspired by Chromatic Number)
 
+----------------------------
+In Progress
+---------------------------
+
 Math Library in C++ 
+
+- Supports 3D primarily, working in cluding ops for 2d 
 
 - This library is currently meant to be used in my game engine, but it can be exapanded on and used in other projects, so I decided to make it a seperate repo, and updating is alongside my game engine development branch
 
