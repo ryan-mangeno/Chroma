@@ -9,6 +9,23 @@
 // vector ops, transformations, mat stuff, etc
 
 
+/* to add:
+* 
+    translate a mat4 by a vec3
+    I have translating a identity mat4 by a vec3 but not a specific mat4
+
+	
+	-> translate(mat4(1.0f), vec3(0.0f, 0.0f, -5.0f));
+
+	rotating view matrix, with some rotation, about some vector:
+
+	-> rotate(View, Rotate.y, vec3(-1.0f, 0.0f, 0.0f));
+
+
+
+*/
+
+
 namespace crm {
 
 
@@ -74,7 +91,7 @@ namespace crm {
 		// a and b might be antiparallel
 		if (Close(a, Mul(b, -1.0f))) {
 
-			//we want to rotate around a to get to b,
+			//we want to  around a to get to b,
 			//pick the least dominant component as the rotation direction
 			vec3 ortho(1, 0, 0);
 			if (fabsf(a.data[1]) < fabs(a.data[0])) {
@@ -406,8 +423,7 @@ namespace crm {
 	/*-------- Matrix4 Operations ----------*/
 
 
-	mat4 MakePerspectiveProjection(
-		float fovy, float aspect, float near, float far) {
+	mat4 MakePerspectiveProjection( float fovy, float aspect, float near, float far) {
 
 		float yMax = near * tanf(radians(fovy / 2));
 		float xMax = yMax * aspect;
