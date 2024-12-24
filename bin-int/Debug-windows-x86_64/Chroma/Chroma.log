@@ -1,8 +1,2 @@
 ﻿  crm_mth.cpp
-C:\dev\Crimson\Crimson\vendor\Chroma\crm_mth.h(270,16): error C2065: 't': undeclared identifier
-  (compiling source file 'crm_mth.cpp')
-  
-C:\dev\Crimson\Crimson\vendor\Chroma\crm_mth.cpp(292,7): error C2365: 'crm::ease_out': redefinition; previous definition was 'data variable'
-      C:\dev\Crimson\Crimson\vendor\Chroma\crm_mth.h(270,7):
-      see declaration of 'crm::ease_out'
-  
+  Chroma.vcxproj -> C:\dev\Crimson\Crimson\vendor\Chroma\bin\Debug-windows-x86_64\Chroma\Chroma.lib

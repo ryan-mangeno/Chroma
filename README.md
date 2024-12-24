@@ -6,7 +6,7 @@
 (Inspired by Chromatic Number)
 
 ----------------------------
-In Progress
+In Progress 
 ---------------------------
 
 Math Library in C++ using SIMD
@@ -18,3 +18,8 @@ Math Library in C++ using SIMD
 - working on making examples in opengl
 
 - regarding premake - it is used in my engine, not needed to simply use the library
+
+
+
+...
+Current tasks, default constructors for vecs and mats
