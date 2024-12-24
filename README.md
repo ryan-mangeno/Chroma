@@ -9,7 +9,7 @@
 In Progress
 ---------------------------
 
-Math Library in C++ 
+Math Library in C++ using SIMD
 
 - Supports 3D primarily, working in cluding ops for 2d 
 
