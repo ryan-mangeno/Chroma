@@ -14,9 +14,10 @@
 
 	vec2 operations, dot, add, mul, sub, etc
 
-	rotating view matrix, with some rotation, about some vector:
+	some specific function i want to add -> rotating arbitary mat4 about some arbitrary vec3 axis
+	-> rotate(mat4, Rotate.y, vec3(x,y,z));
 
-	-> rotate(View, Rotate.y, vec3(-1.0f, 0.0f, 0.0f));
+
 
 
 

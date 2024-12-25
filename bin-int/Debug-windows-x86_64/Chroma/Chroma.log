@@ -1,6 +1,2 @@
 ﻿  crm_mth.cpp
-C:\dev\Crimson\Crimson\vendor\Chroma\crm_mth.cpp(502,8): error C2039: 'cout': is not a member of 'std'
-      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\include\cmath(909,1):
-      see declaration of 'std'
-  
-C:\dev\Crimson\Crimson\vendor\Chroma\crm_mth.cpp(502,8): error C2065: 'cout': undeclared identifier
+  Chroma.vcxproj -> C:\dev\Crimson\Crimson\vendor\Chroma\bin\Debug-windows-x86_64\Chroma\Chroma.lib
