@@ -31,10 +31,18 @@ namespace crm {
 
 	/*--------Constructors---------------*/
 
+	vec2::vec2(float x, float y)
+		: x(x), y(y)
+	{
+	}
 
+	bvec2::bvec2(float x, float y)
+		: x(x), y(y), _pad0(0.0f), _pad1(0.0f)
+	{
+	}
 
 	vec3::vec3(float x, float y, float z)
-		: x(x), y(y), z(z), __PAD__(0.0f)
+		: x(x), y(y), z(z), _pad0(0.0f)
 	{
 	}
 
@@ -72,35 +80,35 @@ namespace crm {
 	}
 
 	// making quaternion from rotation
-	quat::quat(float angle, vec3 axis) {
+	quat::quat(float angle, const vec3& axis) {
 
-		axis = Normalize(axis);
+		vec3 normAxis = Normalize(axis);
 		float s = sinf(radians(angle / 2));
 		float c = cosf(radians(angle / 2));
 
-		vector = _mm_mul_ps(axis.vector, _mm_set1_ps(s));
+		vector = _mm_mul_ps(normAxis.vector, _mm_set1_ps(s));
 		data[3] = c;
 
 	}
 
 	// making rotation from two vec3's
-	quat::quat(vec3 a, vec3 b) : w(0.0f) {
-		a = Normalize(a);
-		b = Normalize(b);
+	quat::quat(const vec3& a, const vec3& b) : w(0.0f) {
+		vec3 aNorm = Normalize(a);
+		vec3 bNorm = Normalize(b);
 
 		// a and b might be antiparallel
-		if (Close(a, Mul(b, -1.0f))) {
+		if (Close(aNorm, Mul(bNorm, -1.0f))) {
 
 			//we want to  around a to get to b,
 			//pick the least dominant component as the rotation direction
 			vec3 ortho(1, 0, 0);
-			if (fabsf(a.data[1]) < fabs(a.data[0])) {
+			if (fabsf(aNorm.data[1]) < fabs(aNorm.data[0])) {
 				ortho = vec3(0, 1, 0);
 			}
-			if (fabsf(a.data[2]) < std::fmin(fabs(a.data[0]), fabs(a.data[1]))) {
+			if (fabsf(aNorm.data[2]) < std::fmin(fabs(aNorm.data[0]), fabs(aNorm.data[1]))) {
 				ortho = vec3(0, 0, 1);
 			}
-			vec3 axis = Normalize(Cross(a, ortho));
+			vec3 axis = Normalize(Cross(aNorm, ortho));
 
 			x = axis.data[0];
 			y = axis.data[1];
@@ -110,13 +118,13 @@ namespace crm {
 		else
 		{
 			//Construct the regular quaternion
-			vec3 halfVec = Normalize(Add(a, b));
-			vec3 axis = Cross(a, halfVec);
+			vec3 halfVec = Normalize(Add(aNorm, bNorm));
+			vec3 axis = Cross(aNorm, halfVec);
 
 			x = axis.data[0];
 			y = axis.data[1];
 			z = axis.data[2];
-			w = Dot(a, halfVec);
+			w = Dot(aNorm, halfVec);
 
 		}
 	}
@@ -181,7 +189,7 @@ namespace crm {
 	/*-------- Vec3 Operations----------*/
 
 
-	float AngleBetweenVectors3(vec3 a, vec3 b) {
+	float AngleBetweenVectors3(const vec3& a, const vec3& b) {
 
 		/*
 		consider two vectors a and b
@@ -202,11 +210,11 @@ namespace crm {
 	}
 
 
-	float Dot(vec3 a, vec3 b) {
+	float Dot(const vec3& a, const vec3& b) {
 		return a.data[0] * b.data[0] + a.data[1] * b.data[1] + a.data[2] * b.data[2];
 	}
 
-	vec3 Cross(vec3 a, vec3 b) {
+	vec3 Cross(const vec3& a, const vec3& b) {
 		vec3 result;
 
 		// cross product gives the perpendicular vector to two vectors 
@@ -219,7 +227,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Normalize(vec3 a) {
+	vec3 Normalize(const vec3& a) {
 
 		// get inv magnitude, we will take this scalar and mult to vector, mag will be 1
 
@@ -234,7 +242,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Sub(vec3 a, vec3 b) {
+	vec3 Sub(const vec3& a, const vec3& b) {
 
 		vec3 result;
 
@@ -243,7 +251,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Add(vec3 a, vec3 b) {
+	vec3 Add(const vec3& a, const vec3& b) {
 
 		vec3 result;
 
@@ -252,7 +260,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Mul(vec3 a, float scalar) {
+	vec3 Mul(const vec3& a, float scalar) {
 
 		vec3 result;
 
@@ -263,7 +271,7 @@ namespace crm {
 	}
 
 
-	vec3 Project(vec3 incoming, vec3 basis) {
+	vec3 Project(const vec3& incoming, const vec3& basis) {
 		/*
 		 take dot of incoming and basis, giving us |a||b|cos(theta)
 		 divide by |b| to get unscaled magnitude of the projection
@@ -275,11 +283,11 @@ namespace crm {
 		return Mul(basis, Dot(incoming, basis) / Dot(basis, basis));
 	}
 
-	vec3 Reject(vec3 incoming, vec3 basis) {
+	vec3 Reject(const vec3& incoming, const vec3& basis) {
 		return Sub(incoming, Project(incoming, basis));
 	}
 
-	vec3 Reflect(vec3 incident, vec3 normal) {
+	vec3 Reflect(const vec3& incident, const vec3& normal) {
 
 		vec3 result;
 		// reflected = incident − 2(incident.normal)normal
@@ -318,7 +326,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Lerp(vec3 a, vec3 b, float t) {
+	vec3 Lerp(const vec3& a, const vec3& b, float t) {
 
 		vec3 result;
 
@@ -348,7 +356,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Slerp(vec3 a, vec3 b, float t) {
+	vec3 Slerp(const vec3& a, const vec3& b, float t) {
 
 		// spherical linear interp
 		// special case when t<.1, just use linear interp
@@ -374,7 +382,7 @@ namespace crm {
 	}
 
 	// normalizing lerp vec
-	vec3 Nlerp(vec3 a, vec3 b, float t) {
+	vec3 Nlerp(const vec3& a, const vec3& b, float t) {
 		return Normalize(Lerp(a, b, t));
 	}
 
@@ -392,7 +400,7 @@ namespace crm {
 	}
 
 
-	bool Close(vec3 a, vec3 b) {
+	bool Close(const vec3& a, const vec3& b) {
 
 		// get the displacement vec to see how far the terminal
 		// points vary from the other, dot product with itself to get the mag
@@ -403,11 +411,11 @@ namespace crm {
 
 	/*-------- Vector4 Operations ----------*/
 
-	float Dot(vec4 a, vec4 b) {
+	float Dot(const vec4& a, const vec4& b) {
 		return a.data[0] * b.data[0] + a.data[1] * b.data[1] + a.data[2] * b.data[2] + a.data[3] * b.data[3];
 	}
 
-	vec4 Normalize(vec4 a) {
+	vec4 Normalize(const vec4& a) {
 
 		float invMagnitude = 1.0f / sqrtf(
 			a.data[0] * a.data[0] + a.data[1] * a.data[1] + a.data[2] * a.data[2] + a.data[3] * a.data[3]
@@ -468,25 +476,25 @@ namespace crm {
 		return result;
 	}
 
-	mat4 LookAt(vec3 eye, vec3 target, vec3 up) {
+	mat4 LookAt(const vec3& eye, const vec3& target, const vec3& up) {
 
-		vec3 forwards = Normalize(Sub(target, eye));
-		vec3 right = Normalize(Cross(forwards, up));
-		up = Normalize(Cross(right, forwards));
-
-		forwards = Mul(forwards, -1);
+		vec3 forwardsNorm = Normalize(Sub(target, eye));
+		vec3 rightNorm = Normalize(Cross(forwardsNorm, up));
+		vec3 upNorm = Normalize(Cross(rightNorm, forwardsNorm));
+		vec3 backwardNorm = Mul(forwardsNorm, -1);
 
 		mat4 result;
 
-		result.column[0] = _mm_setr_ps(right.data[0], up.data[0], forwards.data[0], 0);
-		result.column[1] = _mm_setr_ps(right.data[1], up.data[1], forwards.data[1], 0);
-		result.column[2] = _mm_setr_ps(right.data[2], up.data[2], forwards.data[2], 0);
-		result.column[3] = _mm_setr_ps(-Dot(right, eye), -Dot(up, eye), -Dot(forwards, eye), 1);
+		result.column[0] = _mm_setr_ps(rightNorm.data[0], upNorm.data[0], backwardNorm.data[0], 0);
+		result.column[1] = _mm_setr_ps(rightNorm.data[1], upNorm.data[1], backwardNorm.data[1], 0);
+		result.column[2] = _mm_setr_ps(rightNorm.data[2], upNorm.data[2], backwardNorm.data[2], 0);
+		result.column[3] = _mm_setr_ps(-Dot(rightNorm, eye), -Dot(upNorm, eye), -Dot(backwardNorm, eye), 1);
 
 		return result;
 	}
 
-	mat4 Translation(vec3 translation) {
+
+	mat4 Translation(const vec3& translation) {
 
 		mat4 result;
 
@@ -565,7 +573,7 @@ namespace crm {
 		return result;
 	}
 
-	vec4 Mul(mat4 m, vec4 v) {
+	vec4 Mul(const mat4& m, const vec4& v) {
 
 		vec4 result;
 
@@ -590,7 +598,7 @@ namespace crm {
 	}
 
 
-	mat4 Mul(mat4 m2, mat4 m1) {
+	mat4 Mul(const mat4& m2, const mat4& m1) {
 
 		mat4 result;
 
@@ -605,7 +613,7 @@ namespace crm {
 		return result;
 	}
 
-	mat4 Add(mat4 m1, mat4 m2) {
+	mat4 Add(const mat4& m1, const mat4& m2) {
 
 		mat4 m3;
 		m3.chunk[0] = _mm256_add_ps(m1.chunk[0], m2.chunk[0]);
@@ -614,7 +622,7 @@ namespace crm {
 		return m3;
 	}
 
-	mat4 Mul(mat4 matrix, float scalar) {
+	mat4 Mul(const mat4& matrix, float scalar) {
 
 		mat4 m3;
 		__m256 scale = _mm256_set1_ps(scalar);
@@ -624,7 +632,7 @@ namespace crm {
 		return m3;
 	}
 
-	mat4 Lerp(mat4 m1, mat4 m2, float t) {
+	mat4 Lerp(const mat4& m1, const mat4& m2, float t) {
 
 		mat4 m3;
 		__m256 scale = _mm256_set1_ps(t);
@@ -644,7 +652,7 @@ namespace crm {
 		return m3;
 	}
 
-	mat4 Transpose(mat4 matrix) {
+	mat4 Transpose(const mat4& matrix) {
 
 		mat4 transposed;
 
@@ -657,7 +665,7 @@ namespace crm {
 		return transposed;
 	}
 
-	mat4 TransformInverse(mat4 matrix) {
+	mat4 TransformInverse(const mat4& matrix) {
 
 		//Get the scale factors
 		float a = sqrtf(Dot(matrix.column_vector[0], matrix.column_vector[0]));
@@ -700,17 +708,17 @@ namespace crm {
 
 
 
-	vec3 GetAxisFromQuaternion(quat q) {
+	vec3 GetAxisFromQuaternion(const quat& q) {
 		return Normalize(vec3(q.data[0], q.data[1], q.data[2]));
 	}
 
 
-	float GetAngleFromQuaternion(quat q) {
+	float GetAngleFromQuaternion(const quat& q) {
 		// not scalar first order for quaternion <x,y,z,w>
 		return degrees(2.0f * acosf(q.data[3]));
 	}
 
-	quat Add(quat q1, quat q2) {
+	quat Add(const quat& q1, const quat& q2) {
 		quat result;
 
 		result.vector = _mm_add_ps(q1.vector, q2.vector);
@@ -719,7 +727,7 @@ namespace crm {
 	}
 
 
-	quat Sub(quat q1, quat q2) {
+	quat Sub(const quat& q1, const quat& q2) {
 		quat result;
 
 		result.vector = _mm_sub_ps(q1.vector, q2.vector);
@@ -728,7 +736,7 @@ namespace crm {
 	}
 
 
-	quat Mul(quat q, float scalar) {
+	quat Mul(const quat& q, float scalar) {
 		quat result;
 
 		result.vector = _mm_mul_ps(q.vector, _mm_set1_ps(scalar));
@@ -737,7 +745,7 @@ namespace crm {
 	}
 
 
-	float Dot(quat q1, quat q2) {
+	float Dot(const quat& q1, const quat& q2) {
 		return q1.data[0] * q2.data[0]
 			+ q1.data[1] * q2.data[1]
 			+ q1.data[2] * q2.data[2]
@@ -745,7 +753,7 @@ namespace crm {
 	}
 
 
-	bool Close(quat q1, quat q2) {
+	bool Close(const quat& q1, const quat& q2) {
 
 		quat displacement = Sub(q2, q1);
 
@@ -753,7 +761,7 @@ namespace crm {
 	}
 
 
-	bool QuatSameOrientation(quat q1, quat q2) {
+	bool QuatSameOrientation(const quat& q1, const quat& q2) {
 
 		quat displacement = Sub(q1, q2);
 
@@ -771,7 +779,7 @@ namespace crm {
 	}
 
 
-	quat Normalize(quat q) {
+	quat Normalize(const quat& q) {
 
 		float scalar = 1 / sqrtf(Dot(q, q));
 
@@ -779,7 +787,7 @@ namespace crm {
 	}
 
 
-	quat GetConjQuat(quat q) {
+	quat GetConjQuat(const quat& q) {
 
 		return quat(
 			-q.data[0],
@@ -790,7 +798,7 @@ namespace crm {
 	}
 
 
-	quat InvQuat(quat q) {
+	quat InvQuat(const quat& q) {
 		return Mul(GetConjQuat(q), 1 / Dot(q, q));
 	}
 
