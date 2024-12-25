@@ -14,12 +14,6 @@
 
 	vec2 operations, dot, add, mul, sub, etc
 
-    translate a mat4 by a vec3
-    I have translating a identity mat4 by a vec3 but not a specific mat4
-
-	
-	-> translate(mat4(1.0f), vec3(0.0f, 0.0f, -5.0f));
-
 	rotating view matrix, with some rotation, about some vector:
 
 	-> rotate(View, Rotate.y, vec3(-1.0f, 0.0f, 0.0f));
@@ -507,6 +501,34 @@ namespace crm {
 	  //result.column[1] = _mm_setr_ps(0, 1, 0, 0);
 	  //result.column[2] = _mm_setr_ps(0, 0, 1, 0);
 		result.column[3] = _mm_setr_ps(translation.data[0], translation.data[1], translation.data[2], 1);
+
+		return result;
+	}
+
+	mat4 Translation(const mat4& m, const vec3& translation) {
+
+		mat4 result = m;
+		
+		// just setting the 4th column and adding possible existing translations
+
+		// for vec3, layout will be <x,y,z,0>, as long as the user doesnt touch the pad
+		
+		/*
+		<x, y, z, 0>    +<tx, ty, tz, w>
+			... <tx + x, ty + y, tz + z, 0 + w>
+
+		again, assuming the 0 in the vec3, if the user doesnt touch the padding
+		*/
+		result.column[3] = _mm_add_ps(translation.vector, result.column[3]);
+
+
+		/*
+		alternative, safer solution, but some overhead
+
+		result.column[3] = _mm_add_ps(_mm_setr_ps(translation.data[0], translation.data[1], translation.data[2], 1),
+								(result.column[3]));
+
+		*/
 
 		return result;
 	}
