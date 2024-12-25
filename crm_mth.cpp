@@ -11,6 +11,9 @@
 
 /* to add:
 * 
+
+	vec2 operations, dot, add, mul, sub, etc
+
     translate a mat4 by a vec3
     I have translating a identity mat4 by a vec3 but not a specific mat4
 
