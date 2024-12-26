@@ -1,6 +1,8 @@
 project "Chroma"
     kind "StaticLib"
     language "C++"
+    cppdialect "C++17"
+    staticruntime "on"  
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -18,15 +20,16 @@ project "Chroma"
         buildoptions { "/arch:SSE", "/arch:AVX" }
 
     
-        filter "system:windows"
+    filter "system:windows"
         systemversion "latest"
 
 
-        filter "configurations:Debug"
-            runtime "Debug"    
-            staticruntime "Off"  
+    filter "configurations:Debug"
+        runtime "Debug"   
+        symbols "on" 
 
-        filter "configurations:Release"
-            runtime "Release" 
-            staticruntime "Off"  
+
+    filter "configurations:Release"
+        runtime "Release" 
+        optimize "on"
 
