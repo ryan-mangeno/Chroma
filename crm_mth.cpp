@@ -1,6 +1,6 @@
 ﻿#include "crm_mth.h"
 #include <cmath>
-
+#include <iostream>
 
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
@@ -18,6 +18,11 @@
 	-> rotate(mat4, Rotate.y, vec3(x,y,z));
 
 
+	note:
+		
+		specifically for vec2's, it is highly recommended to use bvec2's as they are generally more optimized
+		with some select functions being much faster with simd, but normal vec2's are there as it avoids some unecesary simd
+		calls, as there is some overhead when needing align with 2 more floats so I made one with simply two floats
 
 
 
@@ -50,6 +55,14 @@ namespace crm {
 	}
 
 
+	mat3::mat3(float x, float y, float z)
+	{
+		// we still have 4 elements per column, but the 4th element in each col is pad
+		column_vector[0] = vec3(x, 0.0f, 0.0f);
+		column_vector[1] = vec3(0.0f, y, 0.0f);
+		column_vector[2] = vec3(0.0f, 0.0f, z);
+	}
+
 	mat4::mat4(float x, float y, float z, float w) {
 		/*
 		
@@ -65,6 +78,8 @@ namespace crm {
 		column_vector[2] = vec4(0.0f, 0.0f, z, 0.0f);
 		column_vector[3] = vec4(0.0f, 0.0f, 0.0f, w);
 	}
+
+
 
 
 	quat::quat()
@@ -182,6 +197,339 @@ namespace crm {
 
 	float degrees(float angle) {
 		return angle * 180.0f / pi;
+	}
+
+	/*-------- Vec2 Operations-----------*/
+
+	float AngleBetweenVectors2(const vec2& a, const vec2& b) {
+
+		/*
+		consider two vectors a and b
+
+		the |projection| of a onto b is, cos(theta)|a|
+		scaling the projection by |b| gives us the dot product being
+		dot(a,b) = |a||b|cos(theta)
+		solving for theta, we get dot(a,b)/(|a||b|)
+
+
+		*/
+
+		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		float dot = Dot(a, b);
+
+		return degrees(acosf(dot / denominator));
+	}
+
+	float AngleBetweenVectors2(const bvec2& a, const bvec2& b) {
+
+		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		float dot = Dot(a, b);
+
+		return degrees(acosf(dot / denominator));
+	}
+
+	float Dot(const vec2& a, const vec2& b) {
+		return a.data[0] * b.data[0] + a.data[1] * b.data[1];
+	}
+
+	float Dot(const bvec2& a, const bvec2& b) {
+		return a.data[0] * b.data[0] + a.data[1] * b.data[1];
+	}
+
+	vec2 Normalize(const vec2& a) {
+
+		// get inv magnitude, we will take this scalar and mult to vector, mag will be 1
+
+		float invMagnitude = 1.0f / sqrtf(a.data[0] * a.data[0] + a.data[1] * a.data[1]);
+
+		vec2 result;
+
+		// _mm_mul_ps used to mult two 128 bit simd registers
+		// set1_ps sets a the 4 floats in 128 bit register to said input float
+		result.x = result.x / invMagnitude;
+		result.y = result.y / invMagnitude;
+
+		return result;
+	}
+
+	bvec2 Normalize(const bvec2& a) {
+
+		// get inv magnitude, we will take this scalar and mult to vector, mag will be 1
+
+		float invMagnitude = 1.0f / sqrtf(a.data[0] * a.data[0] + a.data[1] * a.data[1]);
+
+		bvec2 result;
+
+		// _mm_mul_ps used to mult two 128 bit simd registers
+		// set1_ps sets a the 4 floats in 128 bit register to said input float
+		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(invMagnitude));
+
+		return result;
+	}
+
+	vec2 Sub(const vec2& a, const vec2& b) {
+
+		vec2 result;
+
+		result.x = (a.x - b.x);
+		result.y = (a.y - b.y);
+
+		return result;
+	}
+
+	bvec2 Sub(const bvec2& a, const bvec2& b) {
+
+		bvec2 result;
+
+		result.vector = _mm_sub_ps(a.vector, b.vector);
+
+		return result;
+	}
+
+	vec2 Add(const vec2& a, const vec2& b) {
+		return vec2{ a.x + b.x, a.y + b.y };
+	}
+
+	bvec2 Add(const bvec2& a, const bvec2& b) {
+
+		bvec2 result;
+
+		result.vector = _mm_add_ps(a.vector, b.vector);
+
+		return result;
+	}
+
+	vec2 Multiply(const vec2& a, const vec2& b) {
+		vec2 result;
+
+		result.x = a.x * b.x;
+
+		result.y = a.y * b.y;
+
+		return result;
+	}
+
+	bvec2 Mul(const bvec2& a, float scalar) {
+
+		bvec2 result;
+
+		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(scalar));
+
+		return result;
+
+	}
+
+
+	vec2 Project(const vec2& incoming, const vec2& basis) {
+		/*
+		 take dot of incoming and basis, giving us |a||b|cos(theta)
+		 divide by |b| to get unscaled magnitude of the projection
+		 |projection| = |a|cos(theta)
+		 projection = |a|cos(theta) * b/|b| to get projection in direction of b
+		 we can simply take dot(b,b) to get |b|^2, we will divide |a||b|cos(theta) by |b|^2 then mul by b
+		 this gets our projection
+		*/
+		return Mul(basis, Dot(incoming, basis) / Dot(basis, basis));
+	}
+
+	bvec2 Project(const bvec2& incoming, const bvec2& basis) {
+		return Mul(basis, Dot(incoming, basis) / Dot(basis, basis));
+	}
+
+	vec2 Reject(const vec2& incoming, const vec2& basis) {
+		return Sub(incoming, Project(incoming, basis));
+	}
+
+	bvec2 Reject(const bvec2& incoming, const bvec2& basis) {
+		return Sub(incoming, Project(incoming, basis));
+	}
+
+	vec2 Reflect(const vec2& incident, const vec2& normal) {
+		// reflected = incident − 2(incident.normal)normal
+
+		//_mm_fmadd_ps takes 3 parameters and performs a fused multiply-add operation on packed floats
+		// multiplies src1 and src2 , adds src3
+
+		/*
+
+
+		we get projection of inci and norm with dot(inci, norm)/|norm|^2 * norm
+		we have some vec c, that is perpendicular to the projection vec ( rejection vec )
+		we know -c too, which will be useful for the reflection vec
+		proj + (-c) gives the reflection vec
+
+		for the full formula, we have
+
+		dot(inci, norm)/|norm|^2 * norm + dot(inci, norm)/|norm|^2 * norm - inci
+		or
+		2(dot(inci, norm)/|norm|^2 * norm) - a
+
+
+		however, since we are dealing with physics, with rays, we  replace inci with -inci, simply flipping the sign
+		since the ray is not going out of a wall for example but into it
+		flipping the signs
+
+		-2(dot(inci, norm)/|norm|^2 * norm) + a
+
+		*/
+
+
+
+		float dotProduct = incident.x * normal.x + incident.y * normal.y;
+
+		float scale = -2.0f * dotProduct;
+
+		vec2 scaledNormal{ normal.x * scale, normal.y * scale };
+
+		vec2 result {scaledNormal.x + incident.x, scaledNormal.y + incident.y};
+
+		return result;
+	}
+
+	bvec2 Reflect(const bvec2& incident, const bvec2& normal) {
+
+
+		bvec2 result;
+
+		// applying the same formula above, we can optimize heavily with this simd operation
+		result.vector = _mm_fmadd_ps(
+			normal.vector,
+			_mm_set1_ps(-2.0f * Dot(incident, normal)),
+			incident.vector
+		);
+
+		return result;
+	}
+
+	vec2 Lerp(const vec2& a, const vec2& b, float t) {
+
+		vec2 result;
+
+		// linear interpolation between two vecs
+		/*
+
+			when t = 0, its a
+			t = 0, its b
+
+			lerp(a,b,t) = (1-t)(a) + (t)(b)
+			expanding
+			a - at + bt
+
+			a + t(b-a)
+			
+			result = t(b-a) + a
+
+			so we subtract b-a and multiply by t, then add a
+			allowed to us by _mm_fmadd_ps to multiply to things then add the third
+		*/
+
+		// Compute the element-wise subtraction (b - a)
+		vec2 diff(b.x - a.x, b.y - a.y);
+
+		// Scale the difference by t
+		vec2 scaledDiff(diff.x * t, diff.y * t);
+
+
+		// Add the scaled difference to a
+		result.x = scaledDiff.x + a.x;
+		result.y = scaledDiff.y + a.y;
+
+
+		return result;
+	}
+
+	bvec2 Lerp(const bvec2& a, const bvec2& b, float t) {
+
+		bvec2 result;
+
+		// result = t(b-a) + a
+		result.vector = _mm_fmadd_ps(
+			_mm_sub_ps(b.vector, a.vector),
+			_mm_set1_ps(t),
+			a.vector
+		);
+
+		return result;
+	}
+
+	vec2 Slerp(const vec2& a, const vec2& b, float t) {
+
+
+		// SLERP(a, b, t) = (sin((1-t) * theta) / sin(theta)) * a + (sin(t * theta) / sin(theta)) * b
+
+		if (t < 0.1f) {
+			return Lerp(a, b, t);
+		}
+
+		// Compute the angle between the vectors
+		float angle = AngleBetweenVectors2(a, b);
+		float denominator = sinf(radians(angle));
+
+		// Compute the scaling factors
+		float scaleA = sinf((1 - t) * angle) / denominator;
+		float scaleB = sinf(t * angle) / denominator;
+
+		// Scale vectors
+		vec2 scaledA = { a.x * scaleA, a.y * scaleA };
+		vec2 scaledB = { b.x * scaleB, b.y * scaleB };
+
+		// Add scaled vectors
+		vec2 result = { scaledA.x + scaledB.x, scaledA.y + scaledB.y };
+
+		return result;
+	}
+
+	bvec2 Slerp(const bvec2& a, const bvec2& b, float t) {
+
+
+		// SLERP(a, b, t) = (sin((1-t) * theta) / sin(theta)) * a + (sin(t * theta) / sin(theta)) * b
+
+		if (t < 0.1f) {
+			return Lerp(a, b, t);
+		}
+
+		float angle = AngleBetweenVectors2(a, b);
+
+		float denominator = sinf(radians(angle));
+
+		bvec2 result;
+
+		result.vector = _mm_fmadd_ps(
+			a.vector,
+			_mm_set1_ps(sinf(1 - t) * angle / denominator),
+			_mm_mul_ps(b.vector, _mm_set1_ps(sinf(t * angle) / denominator))
+		);
+
+		return result;
+	}
+
+	// normalizing lerp vec
+	vec2 Nlerp(const vec2& a, const vec2& b, float t) {
+		return Normalize(Lerp(a, b, t));
+	}
+
+
+	bvec2 Nlerp(const bvec2& a, const bvec2& b, float t) {
+		return Normalize(Lerp(a, b, t));
+	}
+
+
+	bool Close(const vec2& a, const vec2& b) {
+
+		// get the displacement vec to see how far the terminal
+		// points vary from the other, dot product with itself to get the mag
+		vec2 displacement = Sub(a, b);
+
+		return Dot(displacement, displacement) < eps;
+	}
+
+	bool Close(const bvec2& a, const bvec2& b) {
+
+		bvec2 displacement = Sub(a, b);
+
+		return Dot(displacement, displacement) < eps;
 	}
 
 	/*-------- Vec3 Operations----------*/
@@ -591,6 +939,8 @@ namespace crm {
 
 		mat4 result;
 
+		// last two columns are default initalized
+
 		result.column[0] = _mm_setr_ps(cT, -sT, 0, 0);
 		result.column[1] = _mm_setr_ps(sT, cT, 0, 0);
 		//	result.column[2] = _mm_setr_ps( 0,   0, 1, 0);
@@ -678,17 +1028,82 @@ namespace crm {
 		return m3;
 	}
 
-	mat4 Transpose(const mat4& matrix) {
+	mat4 Transpose(const mat4& m) {
+		mat4 result;
+		__m128 tmp0 = _mm_unpacklo_ps(m.column[0], m.column[1]);
+		__m128 tmp1 = _mm_unpackhi_ps(m.column[0], m.column[1]);
+		__m128 tmp2 = _mm_unpacklo_ps(m.column[2], m.column[3]);
+		__m128 tmp3 = _mm_unpackhi_ps(m.column[2], m.column[3]);
 
-		mat4 transposed;
+		result.column[0] = _mm_movelh_ps(tmp0, tmp2);
+		result.column[1] = _mm_movehl_ps(tmp2, tmp0);
+		result.column[2] = _mm_movelh_ps(tmp1, tmp3);
+		result.column[3] = _mm_movehl_ps(tmp3, tmp1);
+
+		return result;
+	}
+
+	// Optimized determinant calculation
+	float Determinant(const mat4& m) {
+		mat4 A = m;
+		float det = 1.0f;
 
 		for (int i = 0; i < 4; ++i) {
-			for (int j = 0; j < 4; ++j) {
-				transposed.data[i + 4 * j] = matrix.data[j + 4 * i];
+			// Get diagonal element as pivot
+			float pivot = A.data[i + 4 * i];
+			if (fabs(pivot) < eps) return 0.0f;
+
+			det *= pivot;
+			// Scale current row by 1/pivot
+			__m128 pivotVec = _mm_set1_ps(1.0f / pivot);
+			A.column[i] = _mm_mul_ps(A.column[i], pivotVec);
+
+			// Eliminate in all subsequent rows
+			for (int j = i + 1; j < 4; ++j) {
+				float factor = A.data[i + 4 * j];
+				__m128 factorVec = _mm_set1_ps(factor);
+				A.column[j] = _mm_sub_ps(A.column[j],
+					_mm_mul_ps(factorVec, A.column[i]));
 			}
 		}
 
-		return transposed;
+		return det;
+	}
+
+	// Combined inverse calculation - eliminates need for separate cofactor/adjugate
+	mat4 Inverse(const mat4& m) {
+		mat4 result;
+		mat4 temp = m;
+
+		// Check if matrix is singular
+		if (fabs(Determinant(m)) < eps) {
+			return mat4(0.0f,0.0f,0.0f);  // Return zero matrix
+		}
+
+		// Gauss-Jordan elimination with SIMD
+		for (int i = 0; i < 4; ++i) {
+			// Get pivot
+			float pivot = temp.data[i + 4 * i];
+			__m128 pivotVec = _mm_set1_ps(1.0f / pivot);
+
+			// Scale current row
+			temp.column[i] = _mm_mul_ps(temp.column[i], pivotVec);
+			result.column[i] = _mm_mul_ps(result.column[i], pivotVec);
+
+			// Eliminate in all other rows
+			for (int j = 0; j < 4; ++j) {
+				if (j != i) {
+					float factor = temp.data[i + 4 * j];
+					__m128 factorVec = _mm_set1_ps(factor);
+					temp.column[j] = _mm_sub_ps(temp.column[j],
+						_mm_mul_ps(factorVec, temp.column[i]));
+					result.column[j] = _mm_sub_ps(result.column[j],
+						_mm_mul_ps(factorVec, result.column[i]));
+				}
+			}
+		}
+
+		return result;
 	}
 
 	mat4 TransformInverse(const mat4& matrix) {

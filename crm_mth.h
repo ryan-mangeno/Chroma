@@ -98,6 +98,19 @@ namespace crm {
 		vec4(float x = 0.0f, float y = 0.0f, float z = 0.0f, float w = 0.0f);
 	};
 
+
+	struct mat3 {
+		union {
+			__m128 column[4];    // Array of three 128-bit SIMD registers (used for SSE operations)
+			vec3 column_vector[3]; // Array of 3 vec3, representing the 3 columns of the matrix
+			float data[16];       // Array of 9 floats representing the matrix elements in column-major format
+		};
+
+		// Constructor to initialize a mat3 with optional values (default to identity matrix)
+		mat3(float x = 1.0f, float y = 1.0f, float z = 1.0f);
+
+	};
+
 	struct mat4 {
 		union {
 			__m256 chunk[2];          // Array of two 256-bit SIMD registers (used for AVX operations)
@@ -175,6 +188,243 @@ namespace crm {
 	*/
 	float degrees(float angle);
 
+	/*-------- Vec2 operations    ----------*/
+
+	// bvec2 have different implimentation for simd optimizations
+
+	/**
+		\param a the vector to normalize, cannot have zero magnitude
+		\returns a new vec2, being parallel with the input a, having unit length.
+	*/
+	vec2 Normalize(const vec2& a);
+
+	/**
+	\param a the vector to normalize, cannot have zero magnitude
+	\returns a new vec2, being parallel with the input a, having unit length.
+	*/
+	bvec2 Normalize(const bvec2& a);
+
+	/**
+		Compute a vector subtraction.
+
+		\param a the first vector
+		\param b the second vector
+		\returns a new vector storing the difference: c = a - b
+	*/
+	vec2 Sub(const vec2& a, const vec2& b);
+
+	/**
+	Compute a vector subtraction.
+
+	\param a the first vector
+	\param b the second vector
+	\returns a new vector storing the difference: c = a - b
+	*/
+	bvec2 Sub(const bvec2& a, const bvec2& b);
+
+	/**
+		Compute a vector addition.
+
+		\param a the first vector
+		\param b the second vector
+		\returns a new vector storing the sum: c = a + b
+	*/
+	vec2 Add(const vec2& a, const vec2& b);
+
+	/**
+	Compute a vector addition.
+
+	\param a the first vector
+	\param b the second vector
+	\returns a new vector storing the sum: c = a + b
+	*/
+	bvec2 Add(const bvec2& a, const bvec2& b);
+
+	/**
+		Compute a vector scalar multiplication.
+
+		\param a the vector
+		\param scalar the scalar
+		\returns a new vector storing the scaled vector: c = scalar * a
+	*/
+	vec2 Mul(const vec2& a, float scalar);
+
+	/**
+	Compute a vector scalar multiplication.
+
+	\param a the vector
+	\param scalar the scalar
+	\returns a new vector storing the scaled vector: c = scalar * a
+	*/
+	bvec2 Mul(const bvec2& a, float scalar);
+
+	/**
+		Get the angle between two vectors.
+
+		\param a the first vector, cannot have zero magnitude
+		\param b the second vector, cannot have zero magnitude
+		\returns the angle between the vectors a & b, in degrees
+	*/
+	float AngleBetweenVectors2(const vec2& a, const vec2& b);
+
+	/**
+		Get the angle between two b vectors (b for optional simd usage in vec2s).
+
+		\param a the first vector, cannot have zero magnitude
+		\param b the second vector, cannot have zero magnitude
+		\returns the angle between the vectors a & b, in degrees
+	*/
+	float AngleBetweenVectors2(const bvec2& a, const bvec2& b);
+
+	/**
+		Get the projection of one vector onto another.
+		Any vector v can be decomposed with regard to another vector u:
+
+			v	= v(parallel with u) + v(perpendicular with u)
+				= projection(v onto u) + rejection(v onto u)
+
+		\param incoming the vector to be projected
+		\param basis the vector onto which to be projected, cannot have zero magnitude
+		\returns a new vector, parallel with basis, storing the vector projection of incoming onto basis
+	*/
+	vec2 Project(const vec2& incoming, const vec2& basis);
+
+
+	/**
+	Get the projection of one vector onto another.
+	Any vector v can be decomposed with regard to another vector u:
+
+		v	= v(parallel with u) + v(perpendicular with u)
+			= projection(v onto u) + rejection(v onto u)
+
+	\param incoming the vector to be projected
+	\param basis the vector onto which to be projected, cannot have zero magnitude
+	\returns a new vector, parallel with basis, storing the vector projection of incoming onto basis
+*/
+	bvec2 Project(const bvec2& incoming, const bvec2& basis);
+
+	/**
+		Get the rejection of one vector onto another.
+		Any vector v can be decomposed with regard to another vector u:
+
+			v	= v(parallel with u) + v(perpendicular with u)
+				= projection(v onto u) + rejection(v onto u)
+
+		\param incoming the vector to be rejected
+		\param basis the vector to do the rejecting, cannot have zero magnitude
+		\returns a new vector, orthogonal to basis, storing the vector rejection of incoming from basis
+	*/
+	vec2 Reject(const vec2& incoming, const vec2& basis);
+
+	/**
+		Get the rejection of one vector onto another.
+		Any vector v can be decomposed with regard to another vector u:
+
+			v	= v(parallel with u) + v(perpendicular with u)
+				= projection(v onto u) + rejection(v onto u)
+
+		\param incoming the vector to be rejected
+		\param basis the vector to do the rejecting, cannot have zero magnitude
+		\returns a new vector, orthogonal to basis, storing the vector rejection of incoming from basis
+	*/
+	bvec2 Reject(const bvec2& incoming, const bvec2& basis);
+
+	/**
+		Compute a vector reflection, (* optimized for simd *) -> bvec2
+
+		\param incident a direction vector incident to (pointing towards) the point of impact.
+		\param normal the normal vector about which to reflect. Must have unit length.
+		\returns a new vector representing the direction after reflecting.
+	*/
+	vec2 Reflect(const vec2& incident, const vec2& normal);
+
+
+	/**
+	Compute a vector reflection.
+
+	\param incident a direction vector incident to (pointing towards) the point of impact.
+	\param normal the normal vector about which to reflect. Must have unit length.
+	\returns a new vector representing the direction after reflecting.
+	*/
+	bvec2 Reflect(const bvec2& incident, const bvec2& normal);
+
+	/**
+		Linearly interpolate between two vectors. (* optimized for simd *) -> bvec2
+
+		\param a the first vector
+		\param b the second vector
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	vec2 Lerp(const vec2& a, const vec2& b, float t);
+
+	/**
+	Linearly interpolate between two vectors.
+
+	\param a the first vector
+	\param b the second vector
+	\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+	\returns a new vector, being a linear interpolation between a and b.
+*/
+	bvec2 Lerp(const bvec2& a, const bvec2& b, float t);
+
+	/**
+		Spherical Linear interpolation between two vectors.
+		lerp will take a straight line between vectors, on the other hand,
+		slerp interpolates angle-wise, in a rotational sense.
+
+		\param a the first vector, should be normalized.
+		\param b the second vector, should be normalized.
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	vec2 Slerp(const vec2& a, const vec2& b, float t);
+
+	/**
+	Spherical Linear interpolation between two vectors.
+	lerp will take a straight line between vectors, on the other hand,
+	slerp interpolates angle-wise, in a rotational sense.
+
+	\param a the first vector, should be normalized.
+	\param b the second vector, should be normalized.
+	\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+	\returns a new vector, being a linear interpolation between a and b.
+*/
+	bvec2 Slerp(const bvec2& a, const bvec2& b, float t);
+
+	/**
+		Normalized Linear interpolation between two vectors.
+		Normalizing the result of lerp will approximate slerp.
+
+		\param a the first vector, should be normalized.
+		\param b the second vector, should be normalized.
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	vec2 Nlerp(const vec2& a, const vec2& b, float t);
+
+	/**
+	Normalized Linear interpolation between two vectors.
+	Normalizing the result of lerp will approximate slerp.
+
+	\param a the first vector, should be normalized.
+	\param b the second vector, should be normalized.
+	\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+	\returns a new vector, being a linear interpolation between a and b.
+*/
+	bvec2 Nlerp(const bvec2& a, const bvec2& b, float t);
+
+
+	/**
+		Indicates whether two vectors are within epsilon of one another.
+	*/
+	bool Close(const vec2& a, const vec2& b);
+
+	/**
+	Indicates whether two vectors are within epsilon of one another.
+	*/
+	bool Close(const bvec2& a, const bvec2& b);
+
 	/*-------- Vec3 Operations    ----------*/
 
 	/**
@@ -192,6 +442,7 @@ namespace crm {
 		\returns the dot product: a.b
 	*/
 	float Dot(const vec3& a, const vec3& b);
+
 
 	/**
 		Compute the cross product between two vec3s
@@ -460,6 +711,54 @@ namespace crm {
 	*/
 	mat4 Transpose(const mat4& matrix);
 
+
+	/**
+	 a scalar value from the elements of a square matrix
+	 Invertibility:
+
+		A matrix is invertible (i.e., has an inverse) if and only if its determinant is non-zero.
+		If the determinant is zero, the matrix is singular and cannot be inverted.
+
+	Scaling:
+
+		The determinant of a matrix can be thought of as a scaling factor for the volume when the matrix is used to transform space.
+		If the determinant is greater than 1, the matrix expands space.
+		If the determinant is less than 1, it compresses space.
+
+	Singularity:
+
+		If the determinant of a matrix is zero, the matrix is singular,
+		meaning it does not have an inverse and that its rows or columns are linearly dependent
+		(i.e., one row or column can be written as a linear combination of others).
+
+	Orientation:
+
+		The sign of the determinant (positive or negative) indicates whether the matrix preserves or reverses orientation.
+		A positive determinant indicates that the orientation is preserved,
+		while a negative determinant indicates that the orientation is reversed.
+
+	\param matrix to preform determinant
+	\returns determinant
+*/
+	float Determinant(const mat4& m);
+
+	/**
+		Invert matrix, useful in orthographic projection
+
+	\param matrix input matrix to invert
+	\returns inverse of translation and other transformations
+	*/
+	mat4 Inverse(const mat4& matrix);
+
+
+	/**
+		transpose of the cofactor matrix
+
+	\param matrix input matrix to adjugate
+	\returns transpose of cofactors
+	*/
+	mat4 adjugate(const mat4& m);
+
 	/**
 		Compute a transform matrix inverse.
 
@@ -485,6 +784,8 @@ namespace crm {
 		\param matrix the matrix to invert
 		\returns the inverse
 	*/
+
+
 	mat4 TransformInverse(const mat4& matrix);
 
 	/**
