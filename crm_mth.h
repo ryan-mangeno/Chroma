@@ -277,6 +277,25 @@ namespace crm {
 	float AngleBetweenVectors2(const bvec2& a, const bvec2& b);
 
 	/**
+		Compute the dot product between two vec2s
+		as with any dot product, the order doesn't matter.
+
+		\param a the first vector
+		\param b the second vector
+		\returns the dot product: a.b
+	*/
+	float Dot(const vec2& a, const vec2& b);
+
+	/**
+		Compute the dot product between two bvec2s
+
+		\param a the first vector
+		\param b the second vector
+		\returns the dot product: a.b
+	*/
+	float Dot(const bvec2& a, const bvec2& b);
+
+	/**
 		Get the projection of one vector onto another.
 		Any vector v can be decomposed with regard to another vector u:
 

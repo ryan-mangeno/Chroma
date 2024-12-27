@@ -301,14 +301,20 @@ namespace crm {
 		return result;
 	}
 
-	vec2 Multiply(const vec2& a, const vec2& b) {
-		vec2 result;
+	vec2 Mul(const vec2& a, const vec2& b) {
+		return { a.x * b.x, a.y * b.y };
+	}
 
-		result.x = a.x * b.x;
+	bvec2 Mul(const bvec2& a, const bvec2& b) {
+		bvec2 result;
 
-		result.y = a.y * b.y;
+		result.vector = _mm_mul_ps(a.vector, b.vector);
 
 		return result;
+	}
+
+	vec2 Mul(const vec2& a, float scalar) {
+		return { a.x * scalar, a.x * scalar };
 	}
 
 	bvec2 Mul(const bvec2& a, float scalar) {
