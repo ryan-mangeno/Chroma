@@ -487,6 +487,19 @@ namespace crm {
 	*/
 	mat4 TransformInverse(const mat4& matrix);
 
+	/**
+	*	assumes a right handed cordinate system
+	* 
+	*	\param left left most x axis bound
+	*	\param right right most x axis bound
+	*   \param top top most y axis bound
+	*	\param bottom bottom most y axis bound
+	*   \param near close z axis bound
+	*   \par far far z axis bound
+		\returns a mat4 for a 2D view projection matrix
+	*/
+	mat4 Ortho(float l, float r, float t, float b, float f = -1.0f, float n = 1.0f);
+
 	/*-------- Quaternion Operations ----------*/
 
 	/**

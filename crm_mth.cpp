@@ -613,9 +613,9 @@ namespace crm {
 		*/
 
 		result.vector = _mm_fmadd_ps(_mm_set1_ps(v.data[0]), m.column[0],
-			_mm_fmadd_ps(_mm_set1_ps(v.data[1]), m.column[1],
-				_mm_fmadd_ps(_mm_set1_ps(v.data[2]), m.column[2],
-					_mm_mul_ps(_mm_set1_ps(v.data[3]), m.column[3])
+						_mm_fmadd_ps(_mm_set1_ps(v.data[1]), m.column[1],
+						_mm_fmadd_ps(_mm_set1_ps(v.data[2]), m.column[2],
+						_mm_mul_ps(_mm_set1_ps(v.data[3]), m.column[3])
 				)
 			)
 		);
@@ -717,6 +717,24 @@ namespace crm {
 		inverse.column[3] = _mm_setr_ps(Dot(X, T), Dot(Y, T), Dot(Z, T), 1);
 
 		return inverse;
+	}
+
+	mat4 Ortho(float l, float r, float t, float b, float f, float n) {
+
+
+		mat4 result(1.0f);
+
+		result.column_vector[0].x =  2.0f / (r - l); // x scaling factor
+		result.column_vector[1].y =  2.0f / (t - b); // y scaling factor 
+		result.column_vector[2].z = -2.0f / (f - n); // z scaling factor
+
+		result.column_vector[3].x = -(r + l) / (r - l); // x translation
+		result.column_vector[3].y = -(t + b) / (t - b); // y translation
+		result.column_vector[3].z = -(f + n) / (f - n); // z translation
+
+		return result;
+
+
 	}
 
 	/*-------- Quaternion Operations ----------*/
