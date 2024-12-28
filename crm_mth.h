@@ -99,11 +99,13 @@ namespace crm {
 	};
 
 
+	// for mat3, optimizing with simd is a little more difficult because of a mat3's memory layout
+	// I am not going to pad the mat3 to be like a mat4, I am going to look into an optimized mat3, to see if 
+	// I can possibly optimize a mat3 with simd operations
 	struct mat3 {
-		union {
-			__m128 column[4];    // Array of three 128-bit SIMD registers (used for SSE operations)
-			vec3 column_vector[3]; // Array of 3 vec3, representing the 3 columns of the matrix
-			float data[16];       // Array of 9 floats representing the matrix elements in column-major format
+		union { 
+			vec3 column_vector[3]; 
+			float data[9];      
 		};
 
 		// Constructor to initialize a mat3 with optional values (default to identity matrix)
