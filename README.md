@@ -11,7 +11,7 @@ In Progress
 
 Math Library in C++ using SIMD
 
-- Supports 3D primarily, working on including ops for 2d 
+- Supports 3D and 2D Operations
 
 - This library is currently meant to be used in my game engine, but it can be exapanded on and used in other projects, so I decided to make it a seperate repo, and updating is alongside my game engine development branch
 
