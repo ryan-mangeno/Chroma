@@ -688,6 +688,16 @@ namespace crm {
 	mat4 ZRotation(float angle);
 
 	/**
+		Scale a matrix components by a vec3
+
+		\param m the matrix to apply
+		\param v the vector to scale
+		\returns a scaled mat4
+	*/
+	mat4 Scale(const mat4& m, const vec3& v);
+
+
+	/**
 		Transform a vector by a matrix.
 
 		\param m the matrix to apply

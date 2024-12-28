@@ -955,6 +955,25 @@ namespace crm {
 		return result;
 	}
 
+	mat4 Scale(const mat4& m, const vec3& v) {
+
+		mat4 result = m;
+
+		// [m00 * vx, m01 * vx, m02 * vx, m03 * vx]
+		// [m10 * vy, m11 * vy, m12 * vy, m13 * vy]
+		// [m20 * vz, m21 * vz, m22 * vz, m23 * vz]
+		// [m30 * 1 , m31 * 1 , m32 * 1 , m33 * 1 ]
+
+		// we can set a scale chunk that multiplies to the two chunks in the input matrix
+
+		__m256 scale_chunk = _mm256_set_ps(1.0f, v.z, v.y, v.x, 1.0f, v.z, v.y, v.x);
+
+		result.chunk[0] = _mm256_mul_ps(m.chunk[0], scale_chunk);
+		result.chunk[1] = _mm256_mul_ps(m.chunk[1], scale_chunk);
+
+		return result;
+	}
+
 	vec4 Mul(const mat4& m, const vec4& v) {
 
 		vec4 result;
