@@ -4,8 +4,6 @@
 #include <immintrin.h>
 #include <intrin.h>
 
-constexpr float pi = 3.14159265359f;
-constexpr float eps = 1e-10f;
 
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
@@ -40,6 +38,9 @@ constexpr float eps = 1e-10f;
 */
 
 namespace crm {
+
+	constexpr float pi = 3.14159265359f;
+	constexpr float eps = 1e-10f;
 
 	struct vec2 {
 		union {
@@ -189,6 +190,17 @@ namespace crm {
 		\returns the angle converted to degrees
 	*/
 	float degrees(float angle);
+
+	/**
+	Linearly interpolate between two floats
+
+		\param a float a
+		\param b float b
+		\param t the interpolation parameter.Typically between 0 and 1, though this isn't enforced
+		\returns an interpolated float
+	*/
+
+	float Lerp(float a, float b, float t);
 
 	/*-------- Vec2 operations    ----------*/
 
@@ -619,6 +631,51 @@ namespace crm {
 		\returns the dot product result = a.b
 	*/
 	float Dot(const vec4& a, const vec4& b);
+
+
+
+	/** 
+	
+		\returns angle between vec4 a and b
+
+	*/
+
+	float AngleBetweenVectors4(const vec4& a, const vec4& b);
+
+
+	/**
+		Linearly interpolate between two vectors.
+
+		\param a the first vector
+		\param b the second vector
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+
+	vec4 Lerp(const vec4& a, const vec4& b, float t);
+
+	/**
+		Spherical Linear interpolation between two vectors.
+		lerp will take a straight line between vectors, on the other hand,
+		slerp interpolates angle-wise, in a rotational sense.
+
+		\param a the first vector, should be normalized.
+		\param b the second vector, should be normalized.
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	vec4 Slerp(const vec4& a, const vec4& b, float t);
+
+	/**
+		Normalized Linear interpolation between two vectors.
+		Normalizing the result of lerp will approximate slerp.
+
+		\param a the first vector, should be normalized.
+		\param b the second vector, should be normalized.
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	vec4 Nlerp(const vec4& a, const vec4& b, float t);
 
 	/*-------- Matrix4 Operations ----------*/
 

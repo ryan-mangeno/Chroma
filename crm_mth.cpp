@@ -10,7 +10,9 @@
 
 
 /* to add:
-* 
+
+	
+	clamp
 
 	vec2 operations, dot, add, mul, sub, etc
 
@@ -216,6 +218,11 @@ namespace crm {
 
 		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
 
+		// case when the magnitude of vector a or vector b is 0 is undefined
+		if (denominator == 0.0f) {
+			return 0.0f;
+		}
+
 		float dot = Dot(a, b);
 
 		return degrees(acosf(dot / denominator));
@@ -224,6 +231,11 @@ namespace crm {
 	float AngleBetweenVectors2(const bvec2& a, const bvec2& b) {
 
 		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		// case when the magnitude of vector a or vector b is 0 is undefined
+		if (denominator == 0.0f) {
+			return 0.0f;
+		}
 
 		float dot = Dot(a, b);
 
@@ -236,6 +248,30 @@ namespace crm {
 
 	float Dot(const bvec2& a, const bvec2& b) {
 		return a.data[0] * b.data[0] + a.data[1] * b.data[1];
+	}
+
+	float Lerp(float a, float b, float t)
+	{
+
+		// linear interpolation between two floats
+		/*
+
+			when t = 0, its a
+			t = 0, its b
+
+			lerp(a,b,t) = (1-t)(a) + (t)(b)
+			expanding
+			a - at + bt
+
+			a + t(b-a)
+
+			result = t(b-a) + a
+
+		*/
+
+
+		return (1.0f - t) * (a) + (t) * (b);
+	
 	}
 
 	vec2 Normalize(const vec2& a) {
@@ -314,7 +350,7 @@ namespace crm {
 	}
 
 	vec2 Mul(const vec2& a, float scalar) {
-		return { a.x * scalar, a.x * scalar };
+		return { a.x * scalar, a.y * scalar };
 	}
 
 	bvec2 Mul(const bvec2& a, float scalar) {
@@ -471,6 +507,12 @@ namespace crm {
 
 		// Compute the angle between the vectors
 		float angle = AngleBetweenVectors2(a, b);
+
+		// when angle between two vectors is 0 linear interp is undefined
+		if (angle == 0.0f) {
+			return { 0.0f, 0.0f };
+		}
+
 		float denominator = sinf(radians(angle));
 
 		// Compute the scaling factors
@@ -498,7 +540,13 @@ namespace crm {
 
 		float angle = AngleBetweenVectors2(a, b);
 
+		// when angle between two vectors is 0, slerp is undefined, sin(theta) is divison by 0
+		if (angle == 0.0f) {
+			return { 0.0f, 0.0f };
+		}
+
 		float denominator = sinf(radians(angle));
+
 
 		bvec2 result;
 
@@ -554,7 +602,14 @@ namespace crm {
 
 		*/
 
+
+
 		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		// case when the magnitude of vector a or vector b is 0 is undefined
+		if (denominator == 0.0f) {
+			return 0.0f;
+		}
 
 		float dot = Dot(a, b);
 
@@ -720,7 +775,13 @@ namespace crm {
 
 		float angle = AngleBetweenVectors3(a, b);
 
+		// undefined when angle between two vecs is 0
+		if (angle == 0.0f) {
+			return { 0.0f,0.0f,0.0f };
+		}
+
 		float denominator = sinf(radians(angle));
+
 
 		vec3 result;
 
@@ -764,7 +825,39 @@ namespace crm {
 	/*-------- Vector4 Operations ----------*/
 
 	float Dot(const vec4& a, const vec4& b) {
-		return a.data[0] * b.data[0] + a.data[1] * b.data[1] + a.data[2] * b.data[2] + a.data[3] * b.data[3];
+
+		vec4 result;
+		result.vector = _mm_mul_ps(a.vector, b.vector);
+
+		// _mm_extract_ps maybe ...
+
+		return result.x + result.y + result.z + result.w;
+	}
+
+
+
+	float AngleBetweenVectors4(const vec4& a, const vec4& b) {
+
+		/*
+		consider two vectors a and b
+
+		the |projection| of a onto b is, cos(theta)|a|
+		scaling the projection by |b| gives us the dot product being
+		dot(a,b) = |a||b|cos(theta)
+		solving for theta, we get dot(a,b)/(|a||b|)
+
+
+		*/
+		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		// case when the magnitude of vector a or vector b is 0 is undefined
+		if (denominator == 0.0f) {
+			return 0.0f;
+		}
+
+		float dot = Dot(a, b);
+
+		return degrees(acosf(dot / denominator));
 	}
 
 	vec4 Normalize(const vec4& a) {
@@ -778,6 +871,70 @@ namespace crm {
 		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(invMagnitude));
 
 		return result;
+	}
+
+
+	vec4 Lerp(const vec4& a, const vec4& b, float t) {
+
+		vec4 result;
+
+		/*
+
+			when t = 0, its a
+			t = 0, its b
+
+			lerp(a,b,t) = (1-t)(a) + (t)(b)
+			expanding
+			a - at + bt
+
+			a + t(b-a)
+			t(b-a) + a
+
+		*/
+
+		result.vector = _mm_fmadd_ps(
+			_mm_sub_ps(b.vector, a.vector),
+			_mm_set1_ps(t),
+			a.vector
+		);
+
+		return result;
+	}
+
+	vec4 Slerp(const vec4& a, const vec4& b, float t) {
+
+		// spherical linear interp
+		// special case when t<.1, just use linear interp
+		// SLERP(a, b, t) = (sin((1-t) * theta) / sin(theta)) * a + (sin(t * theta) / sin(theta)) * b
+
+		if (t < 0.1f) {
+			return Lerp(a, b, t);
+		}
+
+		float angle = AngleBetweenVectors4(a, b);
+		
+		// undefined when angle is 0 between two vectors
+		if (angle == 0.0f) {
+			return { 0.0f,0.0f,0.0f,0.0f };
+		}
+
+		float denominator = sinf(radians(angle));
+
+
+		vec4 result;
+
+		result.vector = _mm_fmadd_ps(
+			a.vector,
+			_mm_set1_ps(sinf(1 - t) * angle / denominator),
+			_mm_mul_ps(b.vector, _mm_set1_ps(sinf(t * angle) / denominator))
+		);
+
+		return result;
+	}
+
+	// normalizing lerp vec
+	vec4 Nlerp(const vec4& a, const vec4& b, float t) {
+		return Normalize(Lerp(a, b, t));
 	}
 
 	/*-------- Matrix4 Operations ----------*/
@@ -1067,6 +1224,8 @@ namespace crm {
 
 		return result;
 	}
+
+	
 
 	// Optimized determinant calculation
 	float Determinant(const mat4& m) {
