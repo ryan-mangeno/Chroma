@@ -72,6 +72,18 @@ namespace crm {
 
 	struct vec3 {
 		union {
+			float data[3]; 
+
+			struct {
+				float x, y, z;
+			};
+		};
+		vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+	};
+
+
+	struct bvec3 {
+		union {
 			__m128 vector;      // 128-bit SIMD register representing the 3D vector
 			float data[4];      // Array of 4 floats, includes 3 for the vector and 1 for padding 
 
@@ -79,8 +91,11 @@ namespace crm {
 				float x, y, z, _pad0;
 			};
 		};
-		vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		bvec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		bvec3(const vec3& v);
 	};
+
+
 
 	struct vec4 {
 		union {
@@ -138,9 +153,11 @@ namespace crm {
 
 		// replaced from MakeQuaternionFromRotation
 		quat(float angle, const vec3& axis);
+		quat(float angle, const bvec3& axis);
 
 		// replaced from MakeRotationFromVec2Vec
 		quat(const vec3& a, const vec3& b);
+		quat(const bvec3& a, const bvec3& b);
 	};
 
 
@@ -458,7 +475,7 @@ namespace crm {
 	*/
 	bool Close(const bvec2& a, const bvec2& b);
 
-	/*-------- Vec3 Operations    ----------*/
+	/*-------- vec3 Operations    ----------*/
 
 	/**
 		Construct a vec3 from individual floating point components.
@@ -615,6 +632,136 @@ namespace crm {
 	*/
 	bool Close(const vec3& a, const vec3& b);
 
+
+	float Dot(const bvec3& a, const bvec3& b);
+
+
+	/**
+		Compute the cross product between two vec3s
+
+		\param a the first vector
+		\param b the second vector
+		\returns a new vector storing the cross product: c = axb
+	*/
+	bvec3 Cross(const bvec3& a, const bvec3& b);
+
+	/**
+		\param a the vector to normalize, cannot have zero magnitude
+		\returns a new vec3, being parallel with the input a, having unit length.
+	*/
+	bvec3 Normalize(const bvec3& a);
+
+	/**
+		Compute a vector subtraction.
+
+		\param a the first vector
+		\param b the second vector
+		\returns a new vector storing the difference: c = a - b
+	*/
+	bvec3 Sub(const bvec3& a, const bvec3& b);
+
+	/**
+		Compute a vector addition.
+
+		\param a the first vector
+		\param b the second vector
+		\returns a new vector storing the sum: c = a + b
+	*/
+	bvec3 Add(const bvec3& a, const bvec3& b);
+
+	/**
+		Compute a vector scalar multiplication.
+
+		\param a the vector
+		\param scalar the scalar
+		\returns a new vector storing the scaled vector: c = scalar * a
+	*/
+	bvec3 Mul(const bvec3& a, float scalar);
+
+	/**
+		Get the angle between two vectors.
+
+		\param a the first vector, cannot have zero magnitude
+		\param b the second vector, cannot have zero magnitude
+		\returns the angle between the vectors a & b, in degrees
+	*/
+	float AngleBetweenVectors3(const bvec3& a, const bvec3& b);
+
+	/**
+		Get the projection of one vector onto another.
+		Any vector v can be decomposed with regard to another vector u:
+
+			v	= v(parallel with u) + v(perpendicular with u)
+				= projection(v onto u) + rejection(v onto u)
+
+		\param incoming the vector to be projected
+		\param basis the vector onto which to be projected, cannot have zero magnitude
+		\returns a new vector, parallel with basis, storing the vector projection of incoming onto basis
+	*/
+	bvec3 Project(const bvec3& incoming, const bvec3& basis);
+
+	/**
+		Get the rejection of one vector onto another.
+		Any vector v can be decomposed with regard to another vector u:
+
+			v	= v(parallel with u) + v(perpendicular with u)
+				= projection(v onto u) + rejection(v onto u)
+
+		\param incoming the vector to be rejected
+		\param basis the vector to do the rejecting, cannot have zero magnitude
+		\returns a new vector, orthogonal to basis, storing the vector rejection of incoming from basis
+	*/
+	bvec3 Reject(const bvec3& incoming, const bvec3& basis);
+
+	/**
+		Compute a vector reflection.
+
+		\param incident a direction vector incident to (pointing towards) the point of impact.
+		\param normal the normal vector about which to reflect. Must have unit length.
+		\returns a new vector representing the direction after reflecting.
+	*/
+	bvec3 Reflect(const bvec3& incident, const bvec3& normal);
+
+	/**
+		Linearly interpolate between two vectors.
+
+		\param a the first vector
+		\param b the second vector
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	bvec3 Lerp(const bvec3& a, const bvec3& b, float t);
+
+	/**
+		Spherical Linear interpolation between two vectors.
+		lerp will take a straight line between vectors, on the other hand,
+		slerp interpolates angle-wise, in a rotational sense.
+
+		\param a the first vector, should be normalized.
+		\param b the second vector, should be normalized.
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	bvec3 Slerp(const bvec3& a, const bvec3& b, float t);
+
+	/**
+		Normalized Linear interpolation between two vectors.
+		Normalizing the result of lerp will approximate slerp.
+
+		\param a the first vector, should be normalized.
+		\param b the second vector, should be normalized.
+		\param t the interpolation parameter. Typically between 0 and 1, though this isn't enforced
+		\returns a new vector, being a linear interpolation between a and b.
+	*/
+	bvec3 Nlerp(const bvec3& a, const bvec3& b, float t);
+
+
+	/**
+		Indicates whether two vectors are within epsilon of one another.
+	*/
+	bool Close(const bvec3& a, const bvec3& b);
+
+
 	/*-------- Vector4 Operations ----------*/
 
 	/*
@@ -706,6 +853,18 @@ namespace crm {
 	*/
 	mat4 LookAt(const vec3& eye, const vec3& target, const vec3& up);
 
+
+	/**
+		Make a view matrix (translates and rotates the world around the
+		given reference point)
+
+		\param eye the position of the viewer
+		\param target the position the viewer is looking at
+		\param up the up direction from the viewer's point of reference
+		\returns a new mat4 representing the view transform
+	*/
+	mat4 LookAt(const bvec3& eye, const bvec3& target, const bvec3& up);
+
 	/**
 		Make a translation transform matrix.
 
@@ -715,12 +874,28 @@ namespace crm {
 	mat4 Translation(const vec3& translation);
 
 	/**
+	Make a translation transform matrix.
+
+	\param translation the displacement to apply
+	\returns a new mat4 representing the transform
+	*/
+	mat4 Translation(const bvec3& translation);
+
+	/**
 	    Translate an input matrix.
 
 	\param translation the displacement to apply
 	\returns a new mat4 representing the transformed input mat4
 	*/
 	mat4 Translation(const mat4& m, const vec3& translation);
+
+	/**
+	Translate an input matrix.
+
+	\param translation the displacement to apply
+	\returns a new mat4 representing the transformed input mat4
+	*/
+	mat4 Translation(const mat4& m, const bvec3& translation);
 
 	/**
 		Make a rotation around the x-axis.
@@ -754,6 +929,16 @@ namespace crm {
 		\returns a scaled mat4
 	*/
 	mat4 Scale(const mat4& m, const vec3& v);
+
+
+	/**
+	Scale a matrix components by a vec3
+
+	\param m the matrix to apply
+	\param v the vector to scale
+	\returns a scaled mat4
+*/
+	mat4 Scale(const mat4& m, const bvec3& v);
 
 
 	/**
@@ -840,14 +1025,6 @@ namespace crm {
 
 
 	/**
-		transpose of the cofactor matrix
-
-	\param matrix input matrix to adjugate
-	\returns transpose of cofactors
-	*/
-	mat4 adjugate(const mat4& m);
-
-	/**
 		Compute a transform matrix inverse.
 
 		General matrix inverses are computationally intense, however
@@ -920,6 +1097,7 @@ namespace crm {
 		\returns the quaternion's axis of rotation
 	*/
 	vec3 GetAxisFromQuaternion(const quat& q);
+
 
 	/**
 		\returns the quaternion's angle, in degrees

@@ -14,17 +14,9 @@
 	
 	clamp
 
-	vec2 operations, dot, add, mul, sub, etc
+	some specific function i want to add -> rotating arbitary mat4 about some arbitrary bvec3 axis
+	-> rotate(mat4, Rotate.y, bvec3(x,y,z));
 
-	some specific function i want to add -> rotating arbitary mat4 about some arbitrary vec3 axis
-	-> rotate(mat4, Rotate.y, vec3(x,y,z));
-
-
-	note:
-		
-		specifically for vec2's, it is highly recommended to use bvec2's as they are generally more optimized
-		with some select functions being much faster with simd, but normal vec2's are there as it avoids some unecesary simd
-		calls, as there is some overhead when needing align with 2 more floats so I made one with simply two floats
 
 
 
@@ -46,8 +38,20 @@ namespace crm {
 	{
 	}
 
+
 	vec3::vec3(float x, float y, float z)
+		: x(x), y(y), z(z)
+	{
+	}
+
+
+	bvec3::bvec3(float x, float y, float z)
 		: x(x), y(y), z(z), _pad0(0.0f)
+	{
+	}
+
+	bvec3::bvec3(const vec3& v)
+		: x(v.x), y(v.y), z(v.z), _pad0(0.0f)
 	{
 	}
 
@@ -97,33 +101,35 @@ namespace crm {
 	// making quaternion from rotation
 	quat::quat(float angle, const vec3& axis) {
 
-		vec3 normAxis = Normalize(axis);
+		// upscaling for simd operations 
+		bvec3 optAxis(axis);
+
+		bvec3 normAxis = Normalize(optAxis);
 		float s = sinf(radians(angle / 2));
 		float c = cosf(radians(angle / 2));
 
-		vector = _mm_mul_ps(normAxis.vector, _mm_set1_ps(s));
+		vector = _mm_mul_ps(optAxis.vector, _mm_set1_ps(s));
 		data[3] = c;
 
 	}
 
-	// making rotation from two vec3's
 	quat::quat(const vec3& a, const vec3& b) : w(0.0f) {
-		vec3 aNorm = Normalize(a);
-		vec3 bNorm = Normalize(b);
+		bvec3 aNorm = Normalize(a);
+		bvec3 bNorm = Normalize(b);
 
 		// a and b might be antiparallel
 		if (Close(aNorm, Mul(bNorm, -1.0f))) {
 
 			//we want to  around a to get to b,
 			//pick the least dominant component as the rotation direction
-			vec3 ortho(1, 0, 0);
+			bvec3 ortho(1, 0, 0);
 			if (fabsf(aNorm.data[1]) < fabs(aNorm.data[0])) {
-				ortho = vec3(0, 1, 0);
+				ortho = bvec3(0, 1, 0);
 			}
 			if (fabsf(aNorm.data[2]) < std::fmin(fabs(aNorm.data[0]), fabs(aNorm.data[1]))) {
-				ortho = vec3(0, 0, 1);
+				ortho = bvec3(0, 0, 1);
 			}
-			vec3 axis = Normalize(Cross(aNorm, ortho));
+			bvec3 axis = Normalize(Cross(aNorm, ortho));
 
 			x = axis.data[0];
 			y = axis.data[1];
@@ -133,8 +139,58 @@ namespace crm {
 		else
 		{
 			//Construct the regular quaternion
-			vec3 halfVec = Normalize(Add(aNorm, bNorm));
-			vec3 axis = Cross(aNorm, halfVec);
+			bvec3 halfVec = Normalize(Add(aNorm, bNorm));
+			bvec3 axis = Cross(aNorm, halfVec);
+
+			x = axis.data[0];
+			y = axis.data[1];
+			z = axis.data[2];
+			w = Dot(aNorm, halfVec);
+
+		}
+	}
+
+	// making quaternion from rotation
+	quat::quat(float angle, const bvec3& axis) {
+
+		bvec3 normAxis = Normalize(axis);
+		float s = sinf(radians(angle / 2));
+		float c = cosf(radians(angle / 2));
+
+		vector = _mm_mul_ps(normAxis.vector, _mm_set1_ps(s));
+		data[3] = c;
+
+	}
+
+	// making rotation from two bvec3's
+	quat::quat(const bvec3& a, const bvec3& b) : w(0.0f) {
+		bvec3 aNorm = Normalize(a);
+		bvec3 bNorm = Normalize(b);
+
+		// a and b might be antiparallel
+		if (Close(aNorm, Mul(bNorm, -1.0f))) {
+
+			//we want to  around a to get to b,
+			//pick the least dominant component as the rotation direction
+			bvec3 ortho(1, 0, 0);
+			if (fabsf(aNorm.data[1]) < fabs(aNorm.data[0])) {
+				ortho = bvec3(0, 1, 0);
+			}
+			if (fabsf(aNorm.data[2]) < std::fmin(fabs(aNorm.data[0]), fabs(aNorm.data[1]))) {
+				ortho = bvec3(0, 0, 1);
+			}
+			bvec3 axis = Normalize(Cross(aNorm, ortho));
+
+			x = axis.data[0];
+			y = axis.data[1];
+			z = axis.data[2];
+		}
+
+		else
+		{
+			//Construct the regular quaternion
+			bvec3 halfVec = Normalize(Add(aNorm, bNorm));
+			bvec3 axis = Cross(aNorm, halfVec);
 
 			x = axis.data[0];
 			y = axis.data[1];
@@ -586,35 +642,7 @@ namespace crm {
 		return Dot(displacement, displacement) < eps;
 	}
 
-	/*-------- Vec3 Operations----------*/
-
-
-	float AngleBetweenVectors3(const vec3& a, const vec3& b) {
-
-		/*
-		consider two vectors a and b
-
-		the |projection| of a onto b is, cos(theta)|a|
-		scaling the projection by |b| gives us the dot product being
-		dot(a,b) = |a||b|cos(theta)
-		solving for theta, we get dot(a,b)/(|a||b|)
-
-
-		*/
-
-
-
-		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
-
-		// case when the magnitude of vector a or vector b is 0 is undefined
-		if (denominator == 0.0f) {
-			return 0.0f;
-		}
-
-		float dot = Dot(a, b);
-
-		return degrees(acosf(dot / denominator));
-	}
+	/*-------- vec3 Operations----------*/
 
 
 	float Dot(const vec3& a, const vec3& b) {
@@ -629,7 +657,6 @@ namespace crm {
 		result.data[0] = a.data[1] * b.data[2] - a.data[2] * b.data[1];
 		result.data[1] = a.data[2] * b.data[0] - a.data[0] * b.data[2];
 		result.data[2] = a.data[0] * b.data[1] - a.data[1] * b.data[0];
-		result.data[3] = 0;
 
 		return result;
 	}
@@ -640,41 +667,20 @@ namespace crm {
 
 		float invMagnitude = 1.0f / sqrtf(a.data[0] * a.data[0] + a.data[1] * a.data[1] + a.data[2] * a.data[2]);
 
-		vec3 result;
-
-		// _mm_mul_ps used to mult two 128 bit simd registers
-		// set1_ps sets a the 4 floats in 128 bit register to said input float
-		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(invMagnitude));
-
-		return result;
+		return { a.x / invMagnitude, a.y / invMagnitude, a.z / invMagnitude };
 	}
 
 	vec3 Sub(const vec3& a, const vec3& b) {
 
-		vec3 result;
-
-		result.vector = _mm_sub_ps(a.vector, b.vector);
-
-		return result;
+		return { a.x - b.x, a.y - b.y, a.z - b.z };
 	}
 
 	vec3 Add(const vec3& a, const vec3& b) {
-
-		vec3 result;
-
-		result.vector = _mm_add_ps(a.vector, b.vector);
-
-		return result;
+		return { a.x + b.x, a.y + b.y, a.z + b.z };
 	}
 
 	vec3 Mul(const vec3& a, float scalar) {
-
-		vec3 result;
-
-		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(scalar));
-
-		return result;
-
+		return { a.x * scalar, a.y * scalar, a.z * scalar };
 	}
 
 
@@ -696,7 +702,254 @@ namespace crm {
 
 	vec3 Reflect(const vec3& incident, const vec3& normal) {
 
-		vec3 result;
+		// expanding vec3 for simd operations
+		
+		bvec3 bNorm(normal);
+		bvec3 bInci(incident);
+		bvec3 result;
+		
+		// reflected = incident − 2(incident.normal)normal
+
+		//_mm_fmadd_ps takes 3 parameters and performs a fused multiply-add operation on packed floats
+		// multiplies src1 and src2 , adds src3
+
+		/*
+
+
+		we get projection of inci and norm with dot(inci, norm)/|norm|^2 * norm
+		we have some vec c, that is perpendicular to the projection vec ( rejection vec )
+		we know -c too, which will be useful for the reflection vec
+		proj + (-c) gives the reflection vec
+
+		for the full formula, we have
+
+		dot(inci, norm)/|norm|^2 * norm + dot(inci, norm)/|norm|^2 * norm - inci
+		or
+		2(dot(inci, norm)/|norm|^2 * norm) - a
+
+
+		however, since we are dealing with physics, with rays, we  replace inci with -inci, simply flipping the sign
+		since the ray is not going out of a wall for example but into it
+		flipping the signs
+
+		-2(dot(inci, norm)/|norm|^2 * norm) + a
+
+		*/
+		result.vector = _mm_fmadd_ps(
+			bNorm.vector,
+			_mm_set1_ps(-2.0f * Dot(incident, bNorm)),
+			bInci.vector
+		);
+
+		return { result.x, result.y, result.z };
+	}
+
+	vec3 Lerp(const vec3& a, const vec3& b, float t) {
+
+		// expanding vec3 for simd operations
+
+		bvec3 optA(a);
+		bvec3 optB(b);
+		bvec3 result;
+
+
+		// linear interpolation between two vecs
+		/*
+
+			when t = 0, its a
+			t = 0, its b
+
+			lerp(a,b,t) = (1-t)(a) + (t)(b)
+			expanding
+			a - at + bt
+
+			a + t(b-a)
+			t(b-a) + a
+
+			so we subtract b-a and multiply by t, then add a
+			allowed to us by _mm_fmadd_ps to multiply to things then add the third
+		*/
+
+		result.vector = _mm_fmadd_ps(
+			_mm_sub_ps(optB.vector, optA.vector),
+			_mm_set1_ps(t),
+			optA.vector
+		);
+
+		return { result.x, result.y, result.z };
+	}
+
+	vec3 Slerp(const vec3& a, const vec3& b, float t) {
+
+		// spherical linear interp
+		// special case when t<.1, just use linear interp
+		// SLERP(a, b, t) = (sin((1-t) * theta) / sin(theta)) * a + (sin(t * theta) / sin(theta)) * b
+
+		if (t < 0.1f) {
+			return Lerp(a, b, t);
+		}
+
+		// expanding vec3 for simd operations
+
+		bvec3 optA(a);
+		bvec3 optB(b);
+		bvec3 result;
+
+
+		float angle = AngleBetweenVectors3(a, b);
+
+		// undefined when angle between two vecs is 0
+		if (angle == 0.0f) {
+			return { 0.0f,0.0f,0.0f };
+		}
+
+		float denominator = sinf(radians(angle));
+
+
+		result.vector = _mm_fmadd_ps(
+			optA.vector,
+			_mm_set1_ps(sinf(1 - t) * angle / denominator),
+			_mm_mul_ps(optB.vector, _mm_set1_ps(sinf(t * angle) / denominator))
+		);
+
+		return { result.x, result.y, result.z };
+	}
+
+	// normalizing lerp vec
+	vec3 Nlerp(const vec3& a, const vec3& b, float t) {
+		return Normalize(Lerp(a, b, t));
+	}
+
+
+	// ease in for lerp animation
+	// slow then fast
+	float ease_in(float t) {
+		return t * t;
+	}
+
+	// ease out for lerp animation
+	// fast then slow
+	float ease_out(float t) {
+		return t * (2 - t);
+	}
+
+
+	bool Close(const vec3& a, const vec3& b) {
+
+		// get the displacement vec to see how far the terminal
+		// points vary from the other, dot product with itself to get the mag
+		vec3 displacement = Sub(a, b);
+
+		return Dot(displacement, displacement) < eps;
+	}
+
+
+	float AngleBetweenVectors3(const vec3& a, const vec3& b) {
+
+		/*
+		consider two vectors a and b
+
+		the |projection| of a onto b is, cos(theta)|a|
+		scaling the projection by |b| gives us the dot product being
+		dot(a,b) = |a||b|cos(theta)
+		solving for theta, we get dot(a,b)/(|a||b|)
+
+
+		*/
+
+		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		// case when the magnitude of vector a or vector b is 0 is undefined
+		if (denominator == 0.0f) {
+			return 0.0f;
+		}
+
+		float dot = Dot(a, b);
+
+		return degrees(acosf(dot / denominator));
+	}
+
+
+	float Dot(const bvec3& a, const bvec3& b) {
+		return a.data[0] * b.data[0] + a.data[1] * b.data[1] + a.data[2] * b.data[2];
+	}
+
+	bvec3 Cross(const bvec3& a, const bvec3& b) {
+		bvec3 result;
+
+		// cross product gives the perpendicular vector to two vectors 
+
+		result.data[0] = a.data[1] * b.data[2] - a.data[2] * b.data[1];
+		result.data[1] = a.data[2] * b.data[0] - a.data[0] * b.data[2];
+		result.data[2] = a.data[0] * b.data[1] - a.data[1] * b.data[0];
+		result.data[3] = 0;
+
+		return result;
+	}
+
+	bvec3 Normalize(const bvec3& a) {
+
+		// get inv magnitude, we will take this scalar and mult to vector, mag will be 1
+
+		float invMagnitude = 1.0f / sqrtf(a.data[0] * a.data[0] + a.data[1] * a.data[1] + a.data[2] * a.data[2]);
+
+		bvec3 result;
+
+		// _mm_mul_ps used to mult two 128 bit simd registers
+		// set1_ps sets a the 4 floats in 128 bit register to said input float
+		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(invMagnitude));
+
+		return result;
+	}
+
+	bvec3 Sub(const bvec3& a, const bvec3& b) {
+
+		bvec3 result;
+
+		result.vector = _mm_sub_ps(a.vector, b.vector);
+
+		return result;
+	}
+
+	bvec3 Add(const bvec3& a, const bvec3& b) {
+
+		bvec3 result;
+
+		result.vector = _mm_add_ps(a.vector, b.vector);
+
+		return result;
+	}
+
+	bvec3 Mul(const bvec3& a, float scalar) {
+
+		bvec3 result;
+
+		result.vector = _mm_mul_ps(a.vector, _mm_set1_ps(scalar));
+
+		return result;
+
+	}
+
+
+	bvec3 Project(const bvec3& incoming, const bvec3& basis) {
+		/*
+		 take dot of incoming and basis, giving us |a||b|cos(theta)
+		 divide by |b| to get unscaled magnitude of the projection
+		 |projection| = |a|cos(theta)
+		 projection = |a|cos(theta) * b/|b| to get projection in direction of b
+		 we can simply take dot(b,b) to get |b|^2, we will divide |a||b|cos(theta) by |b|^2 then mul by b
+		 this gets our projection
+		*/
+		return Mul(basis, Dot(incoming, basis) / Dot(basis, basis));
+	}
+
+	bvec3 Reject(const bvec3& incoming, const bvec3& basis) {
+		return Sub(incoming, Project(incoming, basis));
+	}
+
+	bvec3 Reflect(const bvec3& incident, const bvec3& normal) {
+
+		bvec3 result;
 		// reflected = incident − 2(incident.normal)normal
 
 		//_mm_fmadd_ps takes 3 parameters and performs a fused multiply-add operation on packed floats
@@ -733,9 +986,9 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Lerp(const vec3& a, const vec3& b, float t) {
+	bvec3 Lerp(const bvec3& a, const bvec3& b, float t) {
 
-		vec3 result;
+		bvec3 result;
 
 		// linear interpolation between two vecs
 		/*
@@ -763,7 +1016,7 @@ namespace crm {
 		return result;
 	}
 
-	vec3 Slerp(const vec3& a, const vec3& b, float t) {
+	bvec3 Slerp(const bvec3& a, const bvec3& b, float t) {
 
 		// spherical linear interp
 		// special case when t<.1, just use linear interp
@@ -783,7 +1036,7 @@ namespace crm {
 		float denominator = sinf(radians(angle));
 
 
-		vec3 result;
+		bvec3 result;
 
 		result.vector = _mm_fmadd_ps(
 			a.vector,
@@ -795,31 +1048,42 @@ namespace crm {
 	}
 
 	// normalizing lerp vec
-	vec3 Nlerp(const vec3& a, const vec3& b, float t) {
+	bvec3 Nlerp(const bvec3& a, const bvec3& b, float t) {
 		return Normalize(Lerp(a, b, t));
 	}
 
 
-	// ease in for lerp animation
-	// slow then fast
-	float ease_in(float t) {
-		return t * t;
-	}
-
-	// ease out for lerp animation
-	// fast then slow
-	float ease_out(float t) {
-		return t * (2 - t);
-	}
-
-
-	bool Close(const vec3& a, const vec3& b) {
+	bool Close(const bvec3& a, const bvec3& b) {
 
 		// get the displacement vec to see how far the terminal
 		// points vary from the other, dot product with itself to get the mag
-		vec3 displacement = Sub(a, b);
+		bvec3 displacement = Sub(a, b);
 
 		return Dot(displacement, displacement) < eps;
+	}
+
+
+	float AngleBetweenVectors3(const bvec3& a, const bvec3& b)
+	{
+		/*
+		consider two vectors a and b
+
+		the |projection| of a onto b is, cos(theta)|a|
+		scaling the projection by |b| gives us the dot product being
+		dot(a,b) = |a||b|cos(theta)
+		solving for theta, we get dot(a,b)/(|a||b|)
+
+		*/
+		float denominator = sqrtf(Dot(a, a) * Dot(b, b));
+
+		// case when the magnitude of vector a or vector b is 0 is undefined
+		if (denominator == 0.0f) {
+			return 0.0f;
+		}
+
+		float dot = Dot(a, b);
+
+		return degrees(acosf(dot / denominator));
 	}
 
 	/*-------- Vector4 Operations ----------*/
@@ -985,12 +1249,12 @@ namespace crm {
 		return result;
 	}
 
-	mat4 LookAt(const vec3& eye, const vec3& target, const vec3& up) {
+	mat4 LookAt(const bvec3& eye, const bvec3& target, const bvec3& up) {
 
-		vec3 forwardsNorm = Normalize(Sub(target, eye));
-		vec3 rightNorm = Normalize(Cross(forwardsNorm, up));
-		vec3 upNorm = Normalize(Cross(rightNorm, forwardsNorm));
-		vec3 backwardNorm = Mul(forwardsNorm, -1);
+		bvec3 forwardsNorm = Normalize(Sub(target, eye));
+		bvec3 rightNorm = Normalize(Cross(forwardsNorm, up));
+		bvec3 upNorm = Normalize(Cross(rightNorm, forwardsNorm));
+		bvec3 backwardNorm = Mul(forwardsNorm, -1);
 
 		mat4 result;
 
@@ -1002,34 +1266,53 @@ namespace crm {
 		return result;
 	}
 
-
 	mat4 Translation(const vec3& translation) {
 
 		mat4 result;
 
-		// w = 1 for coordinates, w = 0 for directions
-		// first three columns default constructed for identity matrix
-	  //result.column[0] = _mm_setr_ps(1, 0, 0, 0);
-	  //result.column[1] = _mm_setr_ps(0, 1, 0, 0);
-	  //result.column[2] = _mm_setr_ps(0, 0, 1, 0);
+		result.column_vector[3].x += translation.x;
+		result.column_vector[3].y += translation.y;
+		result.column_vector[3].z += translation.z;
+
 		result.column[3] = _mm_setr_ps(translation.data[0], translation.data[1], translation.data[2], 1);
 
 		return result;
 	}
 
-	mat4 Translation(const mat4& m, const vec3& translation) {
+
+	mat4 Translation(const bvec3& translation) {
+
+		mat4 result;
+
+		result.column[3] = _mm_setr_ps(translation.data[0], translation.data[1], translation.data[2], 1);
+
+		return result;
+	}
+
+	crm::mat4 Translation(const mat4& m, const vec3& translation)
+	{
+		mat4 result = m;
+
+		result.column_vector[3].x += translation.x;
+		result.column_vector[3].y += translation.y;
+		result.column_vector[3].z += translation.z;
+
+		return result;
+	}
+
+	mat4 Translation(const mat4& m, const bvec3& translation) {
 
 		mat4 result = m;
 		
 		// just setting the 4th column and adding possible existing translations
 
-		// for vec3, layout will be <x,y,z,0>, as long as the user doesnt touch the pad
+		// for bvec3, layout will be <x,y,z,0>, as long as the user doesnt touch the pad
 		
 		/*
 		<x, y, z, 0>    +<tx, ty, tz, w>
 			... <tx + x, ty + y, tz + z, 0 + w>
 
-		again, assuming the 0 in the vec3, if the user doesnt touch the padding
+		again, assuming the 0 in the bvec3, if the user doesnt touch the padding
 		*/
 		result.column[3] = _mm_add_ps(translation.vector, result.column[3]);
 
@@ -1044,6 +1327,7 @@ namespace crm {
 
 		return result;
 	}
+
 
 	mat4 XRotation(float angle) {
 
@@ -1111,8 +1395,12 @@ namespace crm {
 
 		return result;
 	}
+	
 
-	mat4 Scale(const mat4& m, const vec3& v) {
+	crm::mat4 Scale(const mat4& m, const vec3& v)
+	{
+		// upscale to bvec3 to optimize with simd
+		bvec3 optV(v);
 
 		mat4 result = m;
 
@@ -1121,7 +1409,26 @@ namespace crm {
 		// [m20 * vz, m21 * vz, m22 * vz, m23 * vz]
 		// [m30 * 1 , m31 * 1 , m32 * 1 , m33 * 1 ]
 
-		// we can set a scale chunk that multiplies to the two chunks in the input matrix
+		// setting a scale chunk that multiplies to the two chunks in the input matrix
+
+		__m256 scale_chunk = _mm256_set_ps(1.0f, optV.z, optV.y, optV.x, 1.0f, optV.z, optV.y, optV.x);
+
+		result.chunk[0] = _mm256_mul_ps(m.chunk[0], scale_chunk);
+		result.chunk[1] = _mm256_mul_ps(m.chunk[1], scale_chunk);
+
+		return result;
+	}
+
+	mat4 Scale(const mat4& m, const bvec3& v) {
+
+		mat4 result = m;
+
+		// [m00 * vx, m01 * vx, m02 * vx, m03 * vx]
+		// [m10 * vy, m11 * vy, m12 * vy, m13 * vy]
+		// [m20 * vz, m21 * vz, m22 * vz, m23 * vz]
+		// [m30 * 1 , m31 * 1 , m32 * 1 , m33 * 1 ]
+
+		// setting a scale chunk that multiplies to the two chunks in the input matrix
 
 		__m256 scale_chunk = _mm256_set_ps(1.0f, v.z, v.y, v.x, 1.0f, v.z, v.y, v.x);
 
@@ -1130,6 +1437,7 @@ namespace crm {
 
 		return result;
 	}
+
 
 	vec4 Mul(const mat4& m, const vec4& v) {
 
@@ -1348,12 +1656,12 @@ namespace crm {
 	// 
 	// 	return q;
 	// }
-
-
+	
 
 	vec3 GetAxisFromQuaternion(const quat& q) {
 		return Normalize(vec3(q.data[0], q.data[1], q.data[2]));
 	}
+
 
 
 	float GetAngleFromQuaternion(const quat& q) {
@@ -1444,6 +1752,7 @@ namespace crm {
 	quat InvQuat(const quat& q) {
 		return Mul(GetConjQuat(q), 1 / Dot(q, q));
 	}
+
 
 
 }
