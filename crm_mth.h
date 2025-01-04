@@ -51,7 +51,7 @@ namespace crm {
 				float x, y;
 			};
 		};
-		vec2(float x = 0.0f, float y = 0.0f);
+		constexpr vec2(float x = 0.0f, float y = 0.0f);
 	};
 
 	// batched vec2 ... note -> for simple use cases, it is uncesary to allocate for simd aligment
@@ -78,7 +78,7 @@ namespace crm {
 				float x, y, z;
 			};
 		};
-		vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		constexpr vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
 	};
 
 
@@ -535,6 +535,16 @@ namespace crm {
 		\returns a new vector storing the scaled vector: c = scalar * a
 	*/
 	vec3 Mul(const vec3& a, float scalar);
+
+
+	/**
+	Compute a vector matrix multiplication.
+
+	\param a the matrix
+	\param vector to transform
+	\returns a new transformed vec3
+	*/
+	vec3 Mul(const mat4& m, const vec3& v);
 
 	/**
 		Get the angle between two vectors.

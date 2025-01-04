@@ -28,7 +28,7 @@ namespace crm {
 
 	/*--------Constructors---------------*/
 
-	vec2::vec2(float x, float y)
+	constexpr vec2::vec2(float x, float y)
 		: x(x), y(y)
 	{
 	}
@@ -39,7 +39,7 @@ namespace crm {
 	}
 
 
-	vec3::vec3(float x, float y, float z)
+	constexpr vec3::vec3(float x, float y, float z)
 		: x(x), y(y), z(z)
 	{
 	}
@@ -682,6 +682,33 @@ namespace crm {
 	vec3 Mul(const vec3& a, float scalar) {
 		return { a.x * scalar, a.y * scalar, a.z * scalar };
 	}
+
+
+	vec3 Mul(const mat4& m, const vec3& v) {
+
+
+		bvec3 optV;
+
+		/*
+		v.data[0] is multiplied by each element in m.column[0]
+		v.data[1] is multiplied by each element in m.column[1]
+		v.data[2] is multiplied by each element in m.column[2]
+		v.data[3] is multiplied by each element in m.column[3]
+
+		add all vectors resulting vectors from simd ...
+		*/
+
+		optV.vector = _mm_fmadd_ps(_mm_set1_ps(v.data[0]), m.column[0],
+			_mm_fmadd_ps(_mm_set1_ps(v.data[1]), m.column[1],
+				_mm_fmadd_ps(_mm_set1_ps(v.data[2]), m.column[2],
+					_mm_mul_ps(_mm_set1_ps(v.data[3]), m.column[3])
+				)
+			)
+		);
+
+		return { optV.x, optV.y, optV.z };
+	}
+
 
 
 	vec3 Project(const vec3& incoming, const vec3& basis) {
