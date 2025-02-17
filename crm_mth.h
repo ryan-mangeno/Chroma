@@ -67,7 +67,7 @@ namespace crm {
 				float x, y;
 			};
 		};
-		constexpr vec2(float x = 0.0f, float y = 0.0f);
+		vec2(float x = 0.0f, float y = 0.0f);
 	};
 
 	// batched vec2 ... note -> for simple use cases, it is uncesary to allocate for simd aligment
@@ -94,9 +94,9 @@ namespace crm {
 				float x, y, z;
 			};
 		};
-		constexpr vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
-		constexpr vec3(vec2 v, float z = 0.0f);
-		constexpr vec3(bvec2 v, float z = 0.0f;
+		vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		vec3(vec2 v, float z = 0.0f);
+		vec3(bvec2 v, float z = 0.0f;
 	};
 
 

@@ -55,12 +55,12 @@ namespace crm {
 	{
 	}
 
-	constexpr vec3(vec2 v, float z = 0.0f)
+	vec3::vec3(vec2 v, float z = 0.0f)
 		: x(v.x), y(v.y), z(z)
 	{
 	}
              
-	constexpr vec3(bvec2 v, float z = 0.0f)
+	vec3::vec3(bvec2 v, float z = 0.0f)
 		: x.(v.x), y(v.y), z(z)
 	{
 	}
