@@ -28,6 +28,22 @@
 
 	For SSE: /arch:SSE
 	For AVX: /arch:AVX
+	
+
+
+options       define
+-mfma         __FMA__
+-mavx2        __AVX2__
+-mavx         __AVX__
+-msse4.2      __SSE4_2__
+-msse4.1      __SSE4_1__
+-mssse3       __SSSE3__
+-msse3        __SSE3__
+-msse2        __SSE2__
+-m64          __SSE2__
+-msse         __SSE__
+
+
 
 
  ~ this project is going to be aimed towards said compilers, i will continue development
@@ -79,6 +95,8 @@ namespace crm {
 			};
 		};
 		constexpr vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+		constexpr vec3(vec2 v, float z = 0.0f);
+		constexpr vec3(bvec2 v, float z = 0.0f;
 	};
 
 
@@ -131,6 +149,7 @@ namespace crm {
 
 	struct mat4 {
 		union {
+			__m512 block;             // 512-bit SIMD register (AVX operations)
 			__m256 chunk[2];          // Array of two 256-bit SIMD registers (used for AVX operations)
 			__m128 column[4];         // Array of four 128-bit SIMD registers (used for SSE operations)
 			vec4 column_vector[4];    // Array of 4 vec4, where each element is a column vector of the matrix
