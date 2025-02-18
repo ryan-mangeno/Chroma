@@ -1,9 +1,15 @@
 #ifndef CHROMA_MATH_H
 #define CHROMA_MATH_H
 
-#include <immintrin.h>
-#include <intrin.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+	#include <immintrin.h>
+	#include <intrin.h>
+
+#elif defined(_linux_)
+	#include <xmmintrin.h>
+	#include <emmintrin.h>
+#endif
 
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
@@ -96,7 +102,7 @@ namespace crm {
 		};
 		vec3(float x = 0.0f, float y = 0.0f, float z = 0.0f);
 		vec3(vec2 v, float z = 0.0f);
-		vec3(bvec2 v, float z = 0.0f;
+		vec3(bvec2 v, float z = 0.0f);
 	};
 
 
@@ -119,7 +125,6 @@ namespace crm {
 		union {
 			__m128 vector;      // 128-bit SIMD register representing the 4D vector
 			float data[4];      // Array of 4 floats, representing the vector in standard format
-
 			struct {
 				float x, y, z, w;
 			};

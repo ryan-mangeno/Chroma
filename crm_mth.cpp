@@ -1,7 +1,12 @@
 ﻿#include "crm_mth.h"
 #include <cmath>
 #include <iostream>
-
+#include <mmintrin.h>
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#include <pmmintrin.h>
+#include <tmmintrin.h>
+#include <immintrin.h>
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
 
@@ -28,7 +33,7 @@ namespace crm {
 
 	/*--------Constructors---------------*/
 
-	constexpr vec2::vec2(float x, float y)
+	vec2::vec2(float x, float y)
 		: x(x), y(y)
 	{
 	}
@@ -39,7 +44,7 @@ namespace crm {
 	}
 
 
-	constexpr vec3::vec3(float x, float y, float z)
+	vec3::vec3(float x, float y, float z)
 		: x(x), y(y), z(z)
 	{
 	}
