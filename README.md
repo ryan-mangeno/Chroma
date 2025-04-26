@@ -3,23 +3,35 @@
 ![chroma](https://github.com/user-attachments/assets/cee40a0e-7a78-4044-9ff2-e6d4638ab0d4)
 
 
-(Inspired by Chromatic Number)
+*(Inspired by Chromatic Number)*
 
-----------------------------
-In Progress 
----------------------------
+---
 
-Math Library in C++ using SIMD
+**Chroma** is a lightweight, high-performance math library designed for use in **2D and 3D applications**, such as **game development**, **graphics programming**, **simulation**, and **other math-intensive projects**.
 
-- Supports 3D and 2D Operations
+It provides **SIMD-optimized** vector and matrix types, similar in spirit to libraries like **GLM**, but with a focus on **modern hardware instructions** (like AVX and FMA)
 
-- This library is currently meant to be used in my game engine, but it can be exapanded on and used in other projects, so I decided to make it a seperate repo, and updating is alongside my game engine development branch
+Chroma is intended to be **compiled as a module** (no `main()` function is included) and **linked into your larger application**.
 
-- working on making examples in opengl
+---
 
-- regarding premake - it is used in my engine, not needed to simply use the library
+## Features
 
+- Fast, SIMD-accelerated math operations
+- Support for 2D and 3D vectors
+- Matrix types and transformations
+- Optimized for modern CPUs 
+- Lightweight and self-contained (no external dependencies)
 
+---
 
-...
-Current tasks, vec2 functions, accessability regarding existing functions -> support for rotationg around a specific vector rather than predfined axes (x,y,z) for example
+## Compilation Instructions (Windows)
+
+**Requirements:**
+- [MSYS2](https://www.msys2.org/) (with MinGW-w64 toolchain installed)
+- g++ (MinGW-w64, version 14.1.0+ recommended)
+
+**Compile Command:**
+
+```bash
+g++ -mavx -mfma -O2 -march=native -c crm_mth.cpp
