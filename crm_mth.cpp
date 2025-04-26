@@ -1,12 +1,7 @@
 ﻿#include "crm_mth.h"
 #include <cmath>
 #include <iostream>
-#include <mmintrin.h>
-#include <xmmintrin.h>
-#include <emmintrin.h>
-#include <pmmintrin.h>
-#include <tmmintrin.h>
-#include <immintrin.h>
+
 // used material from getintogamedev on youtube
 // https://www.youtube.com/@GetIntoGameDev/videos
 
@@ -57,16 +52,6 @@ namespace crm {
 
 	bvec3::bvec3(const vec3& v)
 		: x(v.x), y(v.y), z(v.z), _pad0(0.0f)
-	{
-	}
-
-	vec3::vec3(vec2 v, float z = 0.0f)
-		: x(v.x), y(v.y), z(z)
-	{
-	}
-             
-	vec3::vec3(bvec2 v, float z = 0.0f)
-		: x.(v.x), y(v.y), z(z)
 	{
 	}
 
@@ -1493,8 +1478,7 @@ namespace crm {
 
 		add all vectors resulting vectors from simd ...
 		*/
-		
-		
+
 		result.vector = _mm_fmadd_ps(_mm_set1_ps(v.data[0]), m.column[0],
 						_mm_fmadd_ps(_mm_set1_ps(v.data[1]), m.column[1],
 						_mm_fmadd_ps(_mm_set1_ps(v.data[2]), m.column[2],
@@ -1502,7 +1486,7 @@ namespace crm {
 				)
 			)
 		);
-		
+
 		return result;
 	}
 
@@ -1510,12 +1494,7 @@ namespace crm {
 	mat4 Mul(const mat4& m2, const mat4& m1) {
 
 		mat4 result;
-		result.block = _mm512_mul_ps(m2.block, m1.block);
 
-
-		/*
-		 *  to remove ... 
-		 *
 		// this is not a recursive call ...
 		// we call it on the mat column vector, so we multiply the column vector by
 		// all 4 column vectors in m2
@@ -1523,35 +1502,26 @@ namespace crm {
 		result.column_vector[1] = Mul(m2, m1.column_vector[1]);
 		result.column_vector[2] = Mul(m2, m1.column_vector[2]);
 		result.column_vector[3] = Mul(m2, m1.column_vector[3]);
-		*/
+
 		return result;
 	}
 
 	mat4 Add(const mat4& m1, const mat4& m2) {
 
 		mat4 m3;
-
-		m3.block = _mm512_add_ps(m1.block, m2.block);
-		/*
 		m3.chunk[0] = _mm256_add_ps(m1.chunk[0], m2.chunk[0]);
 		m3.chunk[1] = _mm256_add_ps(m1.chunk[1], m2.chunk[1]);
-		*/
+
 		return m3;
 	}
 
 	mat4 Mul(const mat4& matrix, float scalar) {
 
 		mat4 m3;
-
-
-		__m512 scale = _mm512_set1_ps(scalar);
-		m3.block = _mm512_mul_ps(matrix.block, scale);
-			
-		/*
 		__m256 scale = _mm256_set1_ps(scalar);
 		m3.chunk[0] = _mm256_mul_ps(matrix.chunk[0], scale);
 		m3.chunk[1] = _mm256_mul_ps(matrix.chunk[1], scale);
-		*/
+
 		return m3;
 	}
 
