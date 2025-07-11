@@ -9,6 +9,7 @@
 #elif defined(_linux_)
 	#include <xmmintrin.h>
 	#include <emmintrin.h>
+	#include <immintrin.h>
 #endif
 
 // used material from getintogamedev on youtube
