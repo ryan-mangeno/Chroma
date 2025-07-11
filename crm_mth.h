@@ -2,7 +2,7 @@
 #define CHROMA_MATH_H
 
 
-#if defined(_WIN32) || defined(_WIN64) || defined(__x86_64__) || defined(_M_X64)
+#if defined(_WIN32) || defined(_WIN64)
 	#include <immintrin.h>
 	#include <intrin.h>
 	#include <xmmintrin.h>
@@ -12,6 +12,10 @@
 	#include <xmmintrin.h>
 	#include <emmintrin.h>
 	#include <immintrin.h>
+
+#elif defined(__x86_64__) || defined(_M_X64)
+	#include <immintrin.h>
+	#include <xmmintrin.h>
 
 #endif
 
