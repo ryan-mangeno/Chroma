@@ -17,9 +17,6 @@
 	some specific function i want to add -> rotating arbitary mat4 about some arbitrary bvec3 axis
 	-> rotate(mat4, Rotate.y, bvec3(x,y,z));
 
-
-
-
 */
 
 

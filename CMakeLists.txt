@@ -1,38 +1,43 @@
 cmake_minimum_required(VERSION 3.16)
 project(Chroma CXX)
 
-# ==========================================
-# (C++17)
-# ==========================================
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ==========================================
-#  Target
-# ==========================================
-add_library(Chroma STATIC
-    "crm_mth.h"
-    "crm_mth.cpp"
-)
+# mac compatability trick for now
+if(APPLE)
+    # Create a dummy .cpp so the library can "build"
+    set(DUMMY_SRC "${CMAKE_CURRENT_BINARY_DIR}/dummy.cpp")
+    file(WRITE ${DUMMY_SRC} "// Empty Chroma implementation for Mac\n")
+    set(CHROMA_SOURCES ${DUMMY_SRC})
 
-# Allow other projects (like Crimson) to include headers from this folder automatically
-target_include_directories(Chroma PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    # Create a dummy HEADER to replace crm_mth.h
+    set(DUMMY_INC_DIR "${CMAKE_CURRENT_BINARY_DIR}/mac_include")
+    file(MAKE_DIRECTORY ${DUMMY_INC_DIR})
+    file(WRITE "${DUMMY_INC_DIR}/crm_mth.h" "#pragma once\n// This file is empty on Mac to prevent build errors.\n")
 
-# ==========================================
-# Compiler Flags (SIMD)
-# ==========================================
-if(MSVC)
-    target_compile_options(Chroma PRIVATE "/arch:AVX")
+    # the dummy include directory INSTEAD of the real one
+    set(CHROMA_INCLUDE_DIR ${DUMMY_INC_DIR})
+
+    # a macro so C++ code knows Chroma is disabled
+    add_compile_definitions(CN_NO_CHROMA)
+
 else()
-    # GCC / Clang
-    target_compile_options(Chroma PRIVATE "-msse" "-mavx")
+    # Windows/Linux: Use the Real Files
+    set(CHROMA_SOURCES "crm_mth.h" "crm_mth.cpp")
+    set(CHROMA_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 
+#  Target
+add_library(Chroma STATIC ${CHROMA_SOURCES})
 
-# Static Runtime (staticruntime "on")
-# This replicates Premake's behavior of forcing /MT (Release) and /MTd (Debug).
-# Without this, CMake defaults to /MD and /MDd on Windows.
+# points to the empty header. On Windows, the real one.
+target_include_directories(Chroma PUBLIC ${CHROMA_INCLUDE_DIR})
+
+# Compiler Flags (Windows/Linux Only)
 if(MSVC)
-    set_property(TARGET Chroma PROPERTY 
-        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    target_compile_options(Chroma PRIVATE "/arch:AVX")
+    set_property(TARGET Chroma PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(NOT APPLE)
+    target_compile_options(Chroma PRIVATE "-msse" "-mavx")
 endif()

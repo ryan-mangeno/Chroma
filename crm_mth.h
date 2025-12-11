@@ -17,6 +17,8 @@
 	#include <immintrin.h>
 	#include <xmmintrin.h>
 
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    #include "vendor/sse2neon.h" 
 #endif
 
 // used material from getintogamedev on youtube
